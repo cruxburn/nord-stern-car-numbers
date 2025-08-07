@@ -26,6 +26,12 @@ elif [ -f "/app/database_import.sql" ]; then\n\
     echo "🚨 DATA IMPORT MODE: Found database_import.sql"\n\
     echo "   This will CLEAR production data and load local data"\n\
     python /app/init_production_db.py /app/database_import.sql\n\
+elif [ -f "/app/production_data_backup.json" ]; then\n\
+    echo "🔄 DATA RESTORE MODE: Found production_data_backup.json"\n\
+    echo "   Restoring production data from backup"\n\
+    python /app/init_production_db.py /app/production_data_backup.json\n\
+    echo "   Cleaning up backup file"\n\
+    rm -f /app/production_data_backup.json\n\
 else\n\
     echo "✅ CODE-ONLY MODE: No data files found"\n\
     echo "   Preserving existing production data"\n\

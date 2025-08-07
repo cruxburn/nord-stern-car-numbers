@@ -46,7 +46,9 @@ if [ ! -f "database_export.json" ]; then
     exit 1
 fi
 
-echo "✅ Database exported successfully"
+# Get registration count from JSON file
+REGISTRATION_COUNT=$(python -c "import json; data=json.load(open('database_export.json')); print(data.get('total_registrations', 0))")
+echo "✅ Database exported successfully ($REGISTRATION_COUNT registrations)"
 
 # Step 2: Create deployment directory with export files
 echo "📁 Step 2: Preparing deployment files..."
@@ -60,6 +62,12 @@ rsync -av --exclude='database_export.*' --exclude='database_import.sql' --exclud
 # Copy export files to deployment directory
 echo "   Copying export files for deployment..."
 cp database_export.json database_export.csv database_import.sql "$DEPLOY_DIR/"
+
+# Temporarily rename .gcloudignore to allow export files in build
+echo "   Temporarily allowing export files in Cloud Build..."
+if [ -f "$DEPLOY_DIR/.gcloudignore" ]; then
+    mv "$DEPLOY_DIR/.gcloudignore" "$DEPLOY_DIR/.gcloudignore.backup"
+fi
 
 echo "✅ Deployment files prepared in $DEPLOY_DIR"
 
@@ -104,9 +112,21 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
 echo "🏗️ Step 6: Building and deploying with Cloud Build..."
 echo "   This will include the database export files in the deployment..."
 
+# Store current directory
+ORIGINAL_DIR=$(pwd)
+
+# Change to deployment directory and build
 cd "$DEPLOY_DIR"
 gcloud builds submit --config cloudbuild.yaml .
-cd ..
+
+# Change back to original directory
+cd "$ORIGINAL_DIR"
+
+# Restore .gcloudignore file if it was backed up
+if [ -f "$DEPLOY_DIR/.gcloudignore.backup" ]; then
+    echo "   Restoring .gcloudignore file..."
+    mv "$DEPLOY_DIR/.gcloudignore.backup" "$DEPLOY_DIR/.gcloudignore"
+fi
 
 # Step 7: Configure access permissions
 echo "🔐 Step 7: Configuring access permissions..."
@@ -127,7 +147,7 @@ echo "✅ First deployment completed successfully!"
 echo "🌐 Your application is available at: $SERVICE_URL"
 echo ""
 echo "📊 Database Status:"
-echo "   - Local data exported: 318 registrations"
+echo "   - Local data exported: $REGISTRATION_COUNT registrations"
 echo "   - Production database initialized with your data"
 echo "   - Application ready for use"
 echo ""

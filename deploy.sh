@@ -52,11 +52,106 @@ gcloud artifacts repositories create nord-stern-car-numbers \
   --description="Nord Stern Car Numbers Docker Repository" \
   --quiet || echo "Repository already exists"
 
-# Build and deploy using Cloud Build
-echo "🏗️ Building and deploying with Cloud Build..."
-echo "   This deployment preserves existing production data"
+# Step 1: Export current production data (if service exists)
+echo "📊 Step 1: Preserving current production data..."
+if gcloud run services describe $SERVICE_NAME --region=$REGION --quiet &>/dev/null; then
+    echo "   Found existing service, attempting to export current data..."
+    
+    # Create a temporary script to export data from the running service
+    cat > export_production_data.py << 'EOF'
+#!/usr/bin/env python3
+"""
+Script to export data from the production database via HTTP API.
+This runs inside the Cloud Run container to export data before deployment.
+"""
+import requests
+import json
+import sys
+import os
 
-gcloud builds submit --config cloudbuild.yaml .
+def export_production_data():
+    """Export production data via HTTP API."""
+    try:
+        # Get the service URL from environment or construct it
+        service_url = os.environ.get('SERVICE_URL', 'https://nord-stern-car-numbers-53xwewtdza-uc.a.run.app')
+        
+        # Export data via API endpoint (we'll need to add this to app.py)
+        response = requests.get(f"{service_url}/api/export", timeout=30)
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Save to file
+            with open('production_data_backup.json', 'w') as f:
+                json.dump(data, f, indent=2)
+            
+            print(f"✅ Successfully exported {data.get('total_registrations', 0)} registrations")
+            return True
+        else:
+            print(f"❌ Failed to export data: HTTP {response.status_code}")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Error exporting data: {e}")
+        return False
+
+if __name__ == "__main__":
+    success = export_production_data()
+    sys.exit(0 if success else 1)
+EOF
+
+    # Try to export data from the running service
+    if python export_production_data.py; then
+        echo "   ✅ Production data exported successfully"
+        HAS_PRODUCTION_DATA=true
+    else
+        echo "   ⚠️  Could not export production data (service may be down or no data)"
+        HAS_PRODUCTION_DATA=false
+    fi
+    
+    # Clean up temporary script
+    rm -f export_production_data.py
+else
+    echo "   ℹ️  No existing service found, skipping data export"
+    HAS_PRODUCTION_DATA=false
+fi
+
+# Step 2: Build and deploy using Cloud Build
+echo "🏗️ Step 2: Building and deploying with Cloud Build..."
+if [ "$HAS_PRODUCTION_DATA" = true ] && [ -f "production_data_backup.json" ]; then
+    echo "   This deployment will preserve existing production data"
+    echo "   Including production data backup in deployment..."
+    
+    # Create a temporary deployment directory with the backup file
+    DEPLOY_DIR="deploy_temp_$(date +%s)"
+    mkdir -p "$DEPLOY_DIR"
+    
+    # Copy all files except backup file
+    echo "   Copying application files..."
+    rsync -av --exclude='production_data_backup.json' --exclude='venv/' --exclude='.git/' --exclude='deploy_temp_*/' . "$DEPLOY_DIR/"
+    
+    # Copy backup file to deployment directory
+    echo "   Copying production data backup..."
+    cp production_data_backup.json "$DEPLOY_DIR/"
+    
+    # Store current directory
+    ORIGINAL_DIR=$(pwd)
+    
+    # Change to deployment directory and build
+    cd "$DEPLOY_DIR"
+    gcloud builds submit --config cloudbuild.yaml .
+    
+    # Change back to original directory
+    cd "$ORIGINAL_DIR"
+    
+    # Clean up deployment directory and backup file
+    echo "   Cleaning up deployment files..."
+    rm -rf "$DEPLOY_DIR"
+    rm -f production_data_backup.json
+else
+    echo "   This deployment preserves existing production data (no backup available)"
+    gcloud builds submit --config cloudbuild.yaml .
+fi
 
 # Get the service URL
 SERVICE_URL=$(gcloud run services describe $SERVICE_NAME --region=$REGION --format="value(status.url)")
