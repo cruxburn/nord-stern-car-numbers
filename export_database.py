@@ -213,7 +213,8 @@ def create_sql_import_script():
                     if val is None:
                         values.append("NULL")
                     elif isinstance(val, str):
-                        values.append(f"'{val.replace("'", "''")}'")
+                        escaped_val = val.replace("'", "''")
+                        values.append(f"'{escaped_val}'")
                     elif isinstance(val, bool):
                         values.append("1" if val else "0")
                     else:
