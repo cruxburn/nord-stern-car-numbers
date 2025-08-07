@@ -1,0 +1,77 @@
+name: Test and Deploy Nord Stern Car Numbers
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:  # Allow manual triggering
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  REGION: us-central1
+  SERVICE_NAME: nord-stern-car-numbers
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r requirements-test.txt
+        pip install black flake8
+    
+    - name: Code formatting check
+      run: |
+        black --check --diff .
+    
+    - name: Lint code (critical issues only)
+      run: |
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+    
+    - name: Run tests
+      run: |
+        python run_tests.py -v
+    
+    - name: Test coverage
+      run: |
+        python -m pytest tests/ --cov=. --cov-report=html --cov-report=term-missing
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'  # Only deploy from main/master
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Google Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+      with:
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+        service_account_key: ${{ secrets.GCP_SA_KEY }}
+        export_default_credentials: true
+    
+    - name: Authorize Docker push
+      run: gcloud auth configure-docker
+    
+    - name: Build and Deploy to Cloud Run
+      run: |
+        gcloud builds submit --config cloudbuild.yaml .
+    
+    - name: Show Service URL
+      run: |
+        echo "✅ Deployment completed!"
+        echo "🌐 Service URL: https://$SERVICE_NAME-$(echo $PROJECT_ID | cut -d'-' -f1)-$REGION.a.run.app" 

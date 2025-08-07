@@ -6,10 +6,10 @@
 set -e
 
 # Configuration
-PROJECT_ID="your-google-cloud-project-id"  # Replace with your actual project ID
+PROJECT_ID="nord-stern-car-numbers"  # Replace with your actual project ID
 REGION="us-central1"
 SERVICE_NAME="nord-stern-car-numbers"
-IMAGE_NAME="gcr.io/$PROJECT_ID/$SERVICE_NAME"
+IMAGE_NAME="us-docker.pkg.dev/$PROJECT_ID/nord-stern-car-numbers/nord-stern-car-numbers"
 
 echo "🚀 Deploying Nord Stern Car Numbers to Google Cloud Run..."
 echo "Project ID: $PROJECT_ID"
@@ -38,7 +38,17 @@ gcloud config set project $PROJECT_ID
 echo "🔧 Enabling required APIs..."
 gcloud services enable cloudbuild.googleapis.com
 gcloud services enable run.googleapis.com
-gcloud services enable containerregistry.googleapis.com
+gcloud services enable artifactregistry.googleapis.com
+gcloud services enable logging.googleapis.com
+gcloud services enable storage.googleapis.com
+
+# Create Artifact Registry repository (if it doesn't exist)
+echo "🏗️ Setting up Artifact Registry..."
+gcloud artifacts repositories create nord-stern-car-numbers \
+  --repository-format=docker \
+  --location=us \
+  --description="Nord Stern Car Numbers Docker Repository" \
+  --quiet || echo "Repository already exists"
 
 # Build and deploy using Cloud Build
 echo "🏗️ Building and deploying with Cloud Build..."
@@ -51,7 +61,7 @@ echo "✅ Deployment completed successfully!"
 echo "🌐 Your application is available at: $SERVICE_URL"
 echo ""
 echo "📊 To view logs:"
-echo "   gcloud logs tail --service=$SERVICE_NAME --region=$REGION"
+echo "   gcloud logging read \"resource.type=cloud_run_revision AND resource.labels.service_name=$SERVICE_NAME\" --limit=20 --format=\"value(timestamp,textPayload)\""
 echo ""
 echo "🔧 To update the service:"
 echo "   ./deploy.sh"

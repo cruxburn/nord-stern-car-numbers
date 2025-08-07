@@ -6,10 +6,10 @@
 set -e
 
 # Configuration
-PROJECT_ID="your-google-cloud-project-id"  # Replace with your actual project ID
+PROJECT_ID="nord-stern-car-numbers"  # Replace with your actual project ID
 REGION="us-central1"
 SERVICE_NAME="nord-stern-car-numbers"
-IMAGE_NAME="gcr.io/$PROJECT_ID/$SERVICE_NAME"
+IMAGE_NAME="us-docker.pkg.dev/$PROJECT_ID/nord-stern-car-numbers/nord-stern-car-numbers"
 
 echo "🚀 Nord Stern Car Numbers - First Deployment with Data"
 echo "======================================================"
@@ -52,15 +52,53 @@ echo "✅ Database exported successfully"
 echo "🔧 Step 2: Enabling required APIs..."
 gcloud services enable cloudbuild.googleapis.com
 gcloud services enable run.googleapis.com
-gcloud services enable containerregistry.googleapis.com
+gcloud services enable artifactregistry.googleapis.com
+gcloud services enable logging.googleapis.com
+gcloud services enable storage.googleapis.com
 
-# Step 3: Build and deploy using Cloud Build
-echo "🏗️ Step 3: Building and deploying with Cloud Build..."
+# Step 3: Create Artifact Registry repository (if it doesn't exist)
+echo "🏗️ Step 3: Setting up Artifact Registry..."
+gcloud artifacts repositories create nord-stern-car-numbers \
+  --repository-format=docker \
+  --location=us \
+  --description="Nord Stern Car Numbers Docker Repository" \
+  --quiet || echo "Repository already exists"
+
+# Step 4: Configure IAM permissions
+echo "🔐 Step 4: Configuring IAM permissions..."
+COMPUTE_SA=$(gcloud projects describe $PROJECT_ID --format="value(projectNumber)")-compute@developer.gserviceaccount.com
+
+echo "   Granting permissions to compute service account: $COMPUTE_SA"
+
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:$COMPUTE_SA" \
+  --role="roles/storage.admin" \
+  --quiet || echo "Storage admin role already granted"
+
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:$COMPUTE_SA" \
+  --role="roles/run.admin" \
+  --quiet || echo "Run admin role already granted"
+
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:$COMPUTE_SA" \
+  --role="roles/iam.serviceAccountUser" \
+  --quiet || echo "Service account user role already granted"
+
+# Step 5: Build and deploy using Cloud Build
+echo "🏗️ Step 5: Building and deploying with Cloud Build..."
 echo "   This will include the database export file in the deployment..."
 
 gcloud builds submit --config cloudbuild.yaml .
 
-# Step 4: Get the service URL
+# Step 6: Configure access permissions
+echo "🔐 Step 6: Configuring access permissions..."
+gcloud run services update $SERVICE_NAME \
+  --region=$REGION \
+  --no-invoker-iam-check \
+  --quiet
+
+# Step 7: Get the service URL
 SERVICE_URL=$(gcloud run services describe $SERVICE_NAME --region=$REGION --format="value(status.url)")
 
 echo ""
@@ -79,7 +117,7 @@ echo "   3. Remove export files for future deployments:"
 echo "      rm database_export.json database_export.csv database_import.sql"
 echo ""
 echo "📊 To view logs:"
-echo "   gcloud logs tail --service=$SERVICE_NAME --region=$REGION"
+echo "   gcloud logging read \"resource.type=cloud_run_revision AND resource.labels.service_name=$SERVICE_NAME\" --limit=20 --format=\"value(timestamp,textPayload)\""
 echo ""
 echo "🔧 To update the service (after removing export files):"
 echo "   ./deploy.sh"

@@ -14,8 +14,9 @@ This comprehensive guide will help you deploy the Nord Stern Car Numbers applica
 ### Google Cloud APIs Required
 - Cloud Build API
 - Cloud Run API
-- Container Registry API
+- Artifact Registry API (replaces Container Registry)
 - Cloud Logging API
+- Storage API
 
 ## 🎯 Deployment Options
 
@@ -58,11 +59,42 @@ gcloud config set project YOUR_PROJECT_ID
 # Enable required APIs
 gcloud services enable cloudbuild.googleapis.com
 gcloud services enable run.googleapis.com
-gcloud services enable containerregistry.googleapis.com
+gcloud services enable artifactregistry.googleapis.com
 gcloud services enable logging.googleapis.com
+gcloud services enable storage.googleapis.com
 ```
 
-#### Step 3: Deploy Application
+#### Step 3: Setup Artifact Registry
+
+```bash
+# Create Artifact Registry repository (replaces Container Registry)
+gcloud artifacts repositories create nord-stern-car-numbers \
+  --repository-format=docker \
+  --location=us \
+  --description="Nord Stern Car Numbers Docker Repository"
+```
+
+#### Step 4: Configure IAM Permissions
+
+```bash
+# Get your compute service account
+COMPUTE_SA=$(gcloud projects describe YOUR_PROJECT_ID --format="value(projectNumber)")-compute@developer.gserviceaccount.com
+
+# Grant necessary permissions
+gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
+  --member="serviceAccount:$COMPUTE_SA" \
+  --role="roles/storage.admin"
+
+gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
+  --member="serviceAccount:$COMPUTE_SA" \
+  --role="roles/run.admin"
+
+gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
+  --member="serviceAccount:$COMPUTE_SA" \
+  --role="roles/iam.serviceAccountUser"
+```
+
+#### Step 5: Deploy Application
 
 1. **Update deployment script:**
    ```bash
@@ -84,6 +116,23 @@ gcloud services enable logging.googleapis.com
    ```
    https://nord-stern-car-numbers-xxxxx-uc.a.run.app
    ```
+
+#### Step 6: Configure Access (Important!)
+
+After deployment, you may need to configure access permissions:
+
+```bash
+# Allow unauthenticated access (if needed)
+gcloud run services update nord-stern-car-numbers \
+  --region=us-central1 \
+  --no-invoker-iam-check
+
+# Or restrict to specific users/domains
+gcloud run services add-iam-policy-binding nord-stern-car-numbers \
+  --region=us-central1 \
+  --member="domain:nordstern.org" \
+  --role="roles/run.invoker"
+```
 
 ### Option 2: Google App Engine
 
@@ -142,7 +191,7 @@ gcloud run services update nord-stern-car-numbers \
 
 ```bash
 # Real-time logs
-gcloud logs tail --service=nord-stern-car-numbers --region=us-central1
+gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=nord-stern-car-numbers" --limit=20 --format="value(timestamp,textPayload)"
 
 # Historical logs
 gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=nord-stern-car-numbers"
@@ -317,15 +366,26 @@ cd NordSternCarNumbers
 # 2. Setup Google Cloud
 gcloud auth login
 gcloud config set project YOUR_PROJECT_ID
-gcloud services enable cloudbuild.googleapis.com run.googleapis.com
+gcloud services enable cloudbuild.googleapis.com run.googleapis.com artifactregistry.googleapis.com
 
-# 3. Update deployment script
+# 3. Create Artifact Registry repository
+gcloud artifacts repositories create nord-stern-car-numbers \
+  --repository-format=docker \
+  --location=us \
+  --description="Nord Stern Car Numbers Docker Repository"
+
+# 4. Update deployment script
 sed -i '' 's/your-google-cloud-project-id/YOUR_ACTUAL_PROJECT_ID/g' deploy.sh
 
-# 4. Deploy
+# 5. Deploy
 ./deploy.sh
 
-# 5. Access your application
+# 6. Configure access
+gcloud run services update nord-stern-car-numbers \
+  --region=us-central1 \
+  --no-invoker-iam-check
+
+# 7. Access your application
 # URL will be displayed after deployment
 ```
 
@@ -335,13 +395,32 @@ sed -i '' 's/your-google-cloud-project-id/YOUR_ACTUAL_PROJECT_ID/g' deploy.sh
 
 1. **"Permission denied" errors:**
    ```bash
-   # Ensure proper IAM roles
+   # Ensure proper IAM roles for compute service account
+   COMPUTE_SA=$(gcloud projects describe YOUR_PROJECT_ID --format="value(projectNumber)")-compute@developer.gserviceaccount.com
+   
    gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
-     --member="user:YOUR_EMAIL" \
+     --member="serviceAccount:$COMPUTE_SA" \
+     --role="roles/storage.admin"
+   
+   gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
+     --member="serviceAccount:$COMPUTE_SA" \
      --role="roles/run.admin"
+   
+   gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
+     --member="serviceAccount:$COMPUTE_SA" \
+     --role="roles/iam.serviceAccountUser"
    ```
 
-2. **Build failures:**
+2. **"Repository not found" errors:**
+   ```bash
+   # Create Artifact Registry repository
+   gcloud artifacts repositories create nord-stern-car-numbers \
+     --repository-format=docker \
+     --location=us \
+     --description="Nord Stern Car Numbers Docker Repository"
+   ```
+
+3. **Build failures:**
    ```bash
    # Check build logs
    gcloud builds log BUILD_ID
@@ -350,13 +429,18 @@ sed -i '' 's/your-google-cloud-project-id/YOUR_ACTUAL_PROJECT_ID/g' deploy.sh
    docker build -t test-image .
    ```
 
-3. **Service not accessible:**
+4. **Service not accessible:**
    ```bash
    # Check service status
    gcloud run services describe nord-stern-car-numbers --region=us-central1
    
    # Check logs
-   gcloud logs tail --service=nord-stern-car-numbers --region=us-central1
+   gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=nord-stern-car-numbers" --limit=20 --format="value(timestamp,textPayload)"
+   
+   # Configure access
+   gcloud run services update nord-stern-car-numbers \
+     --region=us-central1 \
+     --no-invoker-iam-check
    ```
 
 ### Performance Issues
@@ -454,7 +538,7 @@ gcloud run services update nord-stern-car-numbers \
 gcloud run services describe nord-stern-car-numbers --region=us-central1 --format="value(status.url)"
 
 # View logs
-gcloud logs tail --service=nord-stern-car-numbers --region=us-central1
+gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=nord-stern-car-numbers" --limit=20 --format="value(timestamp,textPayload)"
 
 # Update service
 ./deploy.sh
