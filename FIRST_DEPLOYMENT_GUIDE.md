@@ -36,22 +36,14 @@ This will create three files:
 
 ### Step 2: Prepare for Deployment
 
-**IMPORTANT**: Before deploying, you need to temporarily allow the export files to be included in the build:
+**No manual configuration required!** The deployment script automatically handles file inclusion/exclusion.
 
-```bash
-# Edit .gitignore to comment out the export files
-# Change these lines in .gitignore:
-# database_export.json
-# database_export.csv
-# database_import.sql
-# 
-# To:
-# database_export.json
-# database_export.csv
-# database_import.sql
-```
-
-This is necessary because gcloud respects `.gitignore` patterns and will exclude these files from the build context.
+The `deploy_with_data.sh` script will:
+- Create a temporary deployment directory
+- Copy all application files (excluding export files)
+- Copy export files to the deployment directory
+- Deploy from the temporary directory
+- Clean up automatically
 
 ### Step 3: Deploy with Data
 
@@ -91,12 +83,11 @@ This script will:
 After confirming the deployment is successful:
 
 ```bash
-# Restore .gitignore to exclude export files
-# Uncomment the export file lines in .gitignore
-
-# Remove export files (optional)
+# Remove export files (optional - they're automatically excluded from git)
 rm database_export.json database_export.csv database_import.sql
 ```
+
+**Note:** The deployment script automatically handles file inclusion/exclusion. No manual editing of `.gitignore` or `.gcloudignore` is required.
 
 ## 🔄 Subsequent Deployments
 
@@ -129,10 +120,10 @@ For a production environment, consider:
 ### Common Issues
 
 1. **Database not populated:**
-   - **Check .gitignore**: Ensure export files are not excluded
-   - **Verify file inclusion**: Run `gcloud meta list-files-for-upload | grep database` to confirm files are included
-   - **Check build context size**: Should be ~471kB (not ~184kB) when files are included
-   - **Check deployment logs**: Look for "📊 Initializing empty database..." vs "📊 Initializing database with exported data..."
+   - **Check deployment logs**: Look for "🚨 DATA IMPORT MODE" vs "✅ CODE-ONLY MODE"
+   - **Verify export files**: Ensure `database_export.json` exists before running `deploy_with_data.sh`
+   - **Check build context size**: Should be ~1.2MB (not ~395kB) when files are included
+   - **Check deployment logs**: Look for "📊 IMPORTING DATA" vs "📊 NO DATA IMPORT"
 
 2. **Application won't start:**
    - Check the startup logs

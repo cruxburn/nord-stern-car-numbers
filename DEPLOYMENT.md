@@ -72,14 +72,16 @@ gcloud services enable artifactregistry.googleapis.com
 
 **`deploy_with_data.sh`** - First deployment with local data:
 - Exports local database to JSON/CSV/SQL formats
-- Includes exported data in Docker image
+- Creates temporary deployment directory with export files
 - Deploys to Cloud Run with data pre-loaded
+- Automatically cleans up temporary files
 - Perfect for initial production deployment
 
 **`deploy.sh`** - Subsequent deployments:
 - Standard deployment without data export
 - Updates application code only
 - Preserves existing production data
+- Safe for regular updates
 
 **`setup-deployment.sh`** - Initial GCP setup:
 - Creates required GCP resources

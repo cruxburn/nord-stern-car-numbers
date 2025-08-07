@@ -19,13 +19,16 @@ RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
 # Create startup script
 RUN echo '#!/bin/bash\n\
 if [ -f "/app/database_export.json" ]; then\n\
-    echo "📊 Initializing database with exported data..."\n\
+    echo "🚨 DATA IMPORT MODE: Found database_export.json"\n\
+    echo "   This will CLEAR production data and load local data"\n\
     python /app/init_production_db.py /app/database_export.json\n\
 elif [ -f "/app/database_import.sql" ]; then\n\
-    echo "📊 Initializing database with SQL data..."\n\
+    echo "🚨 DATA IMPORT MODE: Found database_import.sql"\n\
+    echo "   This will CLEAR production data and load local data"\n\
     python /app/init_production_db.py /app/database_import.sql\n\
 else\n\
-    echo "📊 Initializing empty database..."\n\
+    echo "✅ CODE-ONLY MODE: No data files found"\n\
+    echo "   Preserving existing production data"\n\
     python /app/init_production_db.py\n\
 fi\n\
 \n\

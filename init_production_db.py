@@ -69,11 +69,12 @@ def init_production_database(db_path, data_file=None):
 
         # Import data if provided
         if data_file and os.path.exists(data_file):
-            print(f"📊 Importing data from {data_file}...")
+            print(f"📊 IMPORTING DATA: Found data file {data_file}")
+            print("   ⚠️  This will CLEAR existing production data and load new data")
 
-            # Clear existing data first
+            # Clear existing data first (only when importing new data)
             cursor.execute("DELETE FROM car_registrations")
-            print("   Cleared existing data")
+            print("   ✅ Cleared existing production data")
 
             if data_file.endswith(".json"):
                 success = import_from_json(cursor, data_file)
@@ -89,6 +90,9 @@ def init_production_database(db_path, data_file=None):
             else:
                 print("❌ Data import failed")
                 return False
+        else:
+            print("📊 NO DATA IMPORT: No data file provided")
+            print("   ✅ Preserving existing production data (no changes made)")
 
         # Show database summary
         cursor.execute("SELECT COUNT(*) FROM car_registrations")
