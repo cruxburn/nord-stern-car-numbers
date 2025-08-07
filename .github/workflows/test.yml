@@ -31,4 +31,4 @@ jobs:
     
     - name: Test coverage
       run: |
-        python -m pytest --cov=. --cov-report=html --cov-report=term-missing 
+        python -m pytest tests/ --cov=. --cov-report=html --cov-report=term-missing 
