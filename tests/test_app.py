@@ -44,14 +44,14 @@ class NordSternCarNumbersTestCase(unittest.TestCase):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        # Test data with unique car numbers and usage information
+        # Test data with different car number formats and usage information
         test_data = [
             # (first_name, last_name, car_number, sort_order, car_make, car_model, car_year, car_color, reserved_date, reserved_for_year, status, notes, last_usage_year, expiration_date, usage_count, is_active_in_period)
             (
                 "John",
                 "Doe",
-                "101",
-                101,
+                "4",
+                4,
                 "BMW",
                 "M3",
                 2020,
@@ -68,8 +68,8 @@ class NordSternCarNumbersTestCase(unittest.TestCase):
             (
                 "Jane",
                 "Smith",
-                "102",
-                102,
+                "04",
+                4,
                 "Porsche",
                 "911",
                 2021,
@@ -86,8 +86,8 @@ class NordSternCarNumbersTestCase(unittest.TestCase):
             (
                 "Bob",
                 "Johnson",
-                "103",
-                103,
+                "004",
+                4,
                 "Audi",
                 "RS4",
                 2019,
@@ -282,10 +282,10 @@ class NordSternCarNumbersTestCase(unittest.TestCase):
 
     def test_search_by_car_number(self):
         """Test search by car number"""
-        response = self.client.get("/search?number=101")
+        response = self.client.get("/search?number=4")
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"John Doe", response.data)
-        self.assertIn(b"101", response.data)
+        self.assertIn(b"4", response.data)
 
     def test_search_show_all(self):
         """Test search with show_all parameter"""
@@ -341,7 +341,7 @@ class NordSternCarNumbersTestCase(unittest.TestCase):
         data = {
             "first_name": "Test",
             "last_name": "User",
-            "car_number": "101",  # Already exists
+            "car_number": "4",  # Already exists
             "car_make": "BMW",
             "car_model": "M3",
             "car_year": "2023",
@@ -352,7 +352,7 @@ class NordSternCarNumbersTestCase(unittest.TestCase):
 
         response = self.client.post("/add", data=data)
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b"Car number 101 is already taken", response.data)
+        self.assertIn(b"Car number 004 is already taken", response.data)
 
     def test_add_registration_missing_required_fields(self):
         """Test adding registration with missing required fields"""
@@ -419,11 +419,16 @@ class NordSternCarNumbersTestCase(unittest.TestCase):
 
     def test_api_check_number_taken(self):
         """Test API check for taken car number"""
-        response = self.client.get("/api/check_number/101")
+        response = self.client.get("/api/check_number/4")
         self.assertEqual(response.status_code, 200)
         data = response.get_json()
         self.assertFalse(data["available"])
-        self.assertIn("John Doe", data["driver"])
+        # Should find any of the variations (4, 04, 004)
+        self.assertTrue(
+            "John Doe" in data["driver"]
+            or "Jane Smith" in data["driver"]
+            or "Bob Johnson" in data["driver"]
+        )
 
     def test_stats_page(self):
         """Test statistics page loads"""
@@ -467,6 +472,43 @@ class NordSternCarNumbersTestCase(unittest.TestCase):
         response = self.client.get("/search?number=1")
         self.assertEqual(response.status_code, 200)
         # Should find the registration with car number '001'
+
+    def test_flexible_car_number_search(self):
+        """Test the new flexible car number search functionality"""
+        # Test searching for "4" - should find all variations
+        response = self.client.get("/search?number=4")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"John Doe", response.data)  # "4"
+        self.assertIn(b"Jane Smith", response.data)  # "04"
+        self.assertIn(b"Bob Johnson", response.data)  # "004"
+
+    def test_flexible_car_number_search_with_leading_zero(self):
+        """Test searching with leading zero format"""
+        # Test searching for "04" - should find all variations
+        response = self.client.get("/search?number=04")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"John Doe", response.data)  # "4"
+        self.assertIn(b"Jane Smith", response.data)  # "04"
+        self.assertIn(b"Bob Johnson", response.data)  # "004"
+
+    def test_flexible_car_number_search_with_two_leading_zeros(self):
+        """Test searching with two leading zeros format"""
+        # Test searching for "004" - should find all variations
+        response = self.client.get("/search?number=004")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"John Doe", response.data)  # "4"
+        self.assertIn(b"Jane Smith", response.data)  # "04"
+        self.assertIn(b"Bob Johnson", response.data)  # "004"
+
+    def test_flexible_car_number_search_invalid_number(self):
+        """Test searching with invalid number format"""
+        # Test searching for "abc" - should handle gracefully
+        response = self.client.get("/search?number=abc")
+        self.assertEqual(response.status_code, 200)
+        # Should not find any results since it's not a valid number
+        self.assertNotIn(b"John Doe", response.data)
+        self.assertNotIn(b"Jane Smith", response.data)
+        self.assertNotIn(b"Bob Johnson", response.data)
 
     def test_invalid_car_number(self):
         """Test invalid car number input"""
