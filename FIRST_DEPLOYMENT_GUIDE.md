@@ -34,62 +34,76 @@ This will create three files:
 - `database_export.csv` - CSV format
 - `database_import.sql` - SQL script format
 
-### Step 2: Choose Your Deployment Method
+### Step 2: Prepare for Deployment
 
-#### Option A: Google Cloud Build (Recommended)
+**IMPORTANT**: Before deploying, you need to temporarily allow the export files to be included in the build:
 
-1. **Copy the export file to your project directory:**
-   ```bash
-   # Copy the JSON export (recommended)
-   cp database_export.json ./
-   ```
+```bash
+# Edit .gitignore to comment out the export files
+# Change these lines in .gitignore:
+# database_export.json
+# database_export.csv
+# database_import.sql
+# 
+# To:
+# database_export.json
+# database_export.csv
+# database_import.sql
+```
 
-2. **Deploy using Cloud Build:**
-   ```bash
-   # Update the PROJECT_ID in deploy.sh first
-   ./deploy.sh
-   ```
+This is necessary because gcloud respects `.gitignore` patterns and will exclude these files from the build context.
 
-#### Option B: Local Docker Build
+### Step 3: Deploy with Data
 
-1. **Copy the export file:**
-   ```bash
-   cp database_export.json ./
-   ```
+Use the automated deployment script:
 
-2. **Build and deploy:**
-   ```bash
-   # Build the Docker image
-   docker build -t nord-stern-car-numbers .
-   
-   # Deploy to Cloud Run
-   gcloud run deploy nord-stern-car-numbers \
-     --image nord-stern-car-numbers \
-     --platform managed \
-     --region us-central1 \
-     --allow-unauthenticated
-   ```
+```bash
+# Run the first deployment with data script
+./deploy_with_data.sh
+```
 
-### Step 3: Verify the Deployment
+This script will:
+1. Export your local database (if not already done)
+2. Enable required Google Cloud APIs
+3. Build and deploy using Cloud Build
+4. Initialize the production database with your data
+
+### Step 4: Verify the Deployment
 
 1. **Check the deployment logs:**
    ```bash
-   gcloud logs tail --service=nord-stern-car-numbers --region=us-central1
+   gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=nord-stern-car-numbers" --limit=20 --format="value(timestamp,textPayload)" | grep -E "(database|export|import|Initializing|registrations)"
    ```
 
-2. **Access your application:**
+2. **Look for these success messages:**
+   - "📊 Initializing database with exported data..."
+   - "📊 Importing data from /app/database_export.json..."
+   - "Imported 318 registrations from JSON"
+   - "Total registrations: 318"
+   - "✅ Production database initialized successfully!"
+
+3. **Access your application:**
    - The URL will be shown in the deployment output
    - Navigate to the search page and verify your data is there
 
-## 🔄 Subsequent Deployments
+### Step 5: Clean Up
 
-After the first deployment, you can remove the export files and deploy normally:
+After confirming the deployment is successful:
 
 ```bash
-# Remove export files (they're no longer needed)
-rm database_export.json database_export.csv database_import.sql
+# Restore .gitignore to exclude export files
+# Uncomment the export file lines in .gitignore
 
-# Deploy normally
+# Remove export files (optional)
+rm database_export.json database_export.csv database_import.sql
+```
+
+## 🔄 Subsequent Deployments
+
+After the first deployment, you can deploy normally:
+
+```bash
+# Deploy normally (without data export/import)
 ./deploy.sh
 ```
 
@@ -115,9 +129,10 @@ For a production environment, consider:
 ### Common Issues
 
 1. **Database not populated:**
-   - Check that the export file is in the project root
-   - Verify the file name matches exactly
-   - Check deployment logs for errors
+   - **Check .gitignore**: Ensure export files are not excluded
+   - **Verify file inclusion**: Run `gcloud meta list-files-for-upload | grep database` to confirm files are included
+   - **Check build context size**: Should be ~471kB (not ~184kB) when files are included
+   - **Check deployment logs**: Look for "📊 Initializing empty database..." vs "📊 Initializing database with exported data..."
 
 2. **Application won't start:**
    - Check the startup logs
@@ -136,13 +151,16 @@ For a production environment, consider:
 gcloud run services describe nord-stern-car-numbers --region=us-central1
 
 # View recent logs
-gcloud logs tail --service=nord-stern-car-numbers --region=us-central1
+gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=nord-stern-car-numbers" --limit=20 --format="value(timestamp,textPayload)"
 
 # Check database export
 python export_database.py
 
 # Test database initialization locally
 python init_production_db.py database_export.json
+
+# Verify files are included in build
+gcloud meta list-files-for-upload | grep database
 ```
 
 ## 📝 Important Notes
@@ -151,6 +169,7 @@ python init_production_db.py database_export.json
 2. **Data independence** - After deployment, local and production databases are separate
 3. **No automatic sync** - Changes in production won't affect your local database
 4. **Backup regularly** - Consider implementing a backup strategy for production data
+5. **Gitignore management** - Remember to temporarily allow export files for first deployment
 
 ## 🎉 Success!
 
