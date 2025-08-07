@@ -259,16 +259,30 @@ def search():
             (f"%{query}%", f"%{query}%", f"%{query}%"),
         )
     elif number and not show_all:
-        # Search by car number (handle leading zeros)
-        # Convert to string and pad with zeros if needed
-        search_number = str(number).zfill(3)  # Pad to 3 digits with leading zeros
-        cursor.execute(
-            """
-            SELECT * FROM car_registrations 
-            WHERE car_number = ?
-        """,
-            (search_number,),
-        )
+        # Search by car number - try multiple formats and numeric matching
+        try:
+            # Convert to integer for numeric matching
+            search_int = int(number)
+            
+            # Search by sort_order (numeric matching) and also try common formats
+            cursor.execute(
+                """
+                SELECT * FROM car_registrations 
+                WHERE sort_order = ? OR car_number = ? OR car_number = ? OR car_number = ?
+                ORDER BY sort_order, car_number
+            """,
+                (search_int, str(search_int), str(search_int).zfill(2), str(search_int).zfill(3)),
+            )
+        except ValueError:
+            # If not a valid number, search by exact car_number match
+            cursor.execute(
+                """
+                SELECT * FROM car_registrations 
+                WHERE car_number = ?
+                ORDER BY sort_order, car_number
+            """,
+                (number,),
+            )
     else:
         # Show all registrations (when show_all=1 or no search criteria)
         cursor.execute(
