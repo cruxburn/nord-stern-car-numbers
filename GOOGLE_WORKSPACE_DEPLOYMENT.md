@@ -109,6 +109,10 @@ gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
 
 3. **Deploy:**
    ```bash
+   # First deployment with data
+   ./deploy_with_data.sh
+   
+   # Subsequent deployments (preserves production data)
    ./deploy.sh
    ```
 
@@ -116,6 +120,21 @@ gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
    ```
    https://nord-stern-car-numbers-xxxxx-uc.a.run.app
    ```
+
+#### Data Preservation
+
+The application includes automatic data preservation for Cloud Run deployments:
+
+- **First Deployment**: Use `./deploy_with_data.sh` to load initial data
+- **Subsequent Deployments**: Use `./deploy.sh` for code updates (preserves data)
+- **Zero Data Loss**: Production data is automatically backed up and restored
+- **Ephemeral Storage Solution**: Addresses Cloud Run's storage limitations
+
+**How it works:**
+1. `deploy.sh` exports current production data before deployment
+2. Backup is included in the new container image
+3. New container automatically restores data on startup
+4. No manual intervention required
 
 #### Step 6: Configure Access (Important!)
 

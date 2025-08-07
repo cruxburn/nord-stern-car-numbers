@@ -663,27 +663,27 @@ def export_data():
         # Get all registrations
         cursor.execute("SELECT * FROM car_registrations")
         rows = cursor.fetchall()
-        
+
         # Get column names
         columns = [description[0] for description in cursor.description]
-        
+
         # Convert to list of dictionaries
         registrations = []
         for row in rows:
             registration = dict(zip(columns, row))
             registrations.append(registration)
-        
+
         # Create export data structure
         export_data = {
             "export_date": datetime.now().isoformat(),
             "total_registrations": len(registrations),
-            "registrations": registrations
+            "registrations": registrations,
         }
-        
+
         conn.close()
-        
+
         return jsonify(export_data)
-        
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

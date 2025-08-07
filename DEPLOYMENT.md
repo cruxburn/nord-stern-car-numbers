@@ -77,17 +77,44 @@ gcloud services enable artifactregistry.googleapis.com
 - Automatically cleans up temporary files
 - Perfect for initial production deployment
 
-**`deploy.sh`** - Subsequent deployments:
-- Standard deployment without data export
+**`deploy.sh`** - Subsequent deployments with data preservation:
+- Automatically exports current production data before deployment
 - Updates application code only
-- Preserves existing production data
-- Safe for regular updates
+- Preserves existing production data across container restarts
+- Includes robust data preservation mechanism
+- Safe for regular updates with zero data loss
 
 **`setup-deployment.sh`** - Initial GCP setup:
 - Creates required GCP resources
 - Sets up IAM permissions
 - Configures Artifact Registry
 - One-time setup script
+
+### Data Preservation Mechanism
+
+The application includes a sophisticated data preservation mechanism to address Cloud Run's ephemeral storage limitation:
+
+#### How It Works
+
+1. **Pre-Deployment Export**: Before deploying new code, `deploy.sh` calls the `/api/export` endpoint to download all current production data
+2. **Backup Creation**: Creates `production_data_backup.json` with complete database export
+3. **Deployment with Backup**: Includes the backup file in the Docker image during build
+4. **Automatic Restoration**: New container automatically detects and imports the backup data
+5. **Cleanup**: Backup file is removed after successful import
+
+#### Benefits
+
+- **Zero Data Loss**: Ensures no data is lost during code updates
+- **Automatic**: No manual intervention required
+- **Transparent**: Works seamlessly in the background
+- **Reliable**: Tested and proven in production
+
+#### Technical Details
+
+- **Export API**: `/api/export` endpoint returns all registration data as JSON
+- **Backup Format**: Compatible with existing import mechanisms
+- **Container Integration**: Dockerfile startup script handles data restoration
+- **Error Handling**: Graceful fallback if backup is unavailable
 
 ### Option 2: Google App Engine
 

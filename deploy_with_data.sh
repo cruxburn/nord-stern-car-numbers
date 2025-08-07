@@ -63,11 +63,104 @@ rsync -av --exclude='database_export.*' --exclude='database_import.sql' --exclud
 echo "   Copying export files for deployment..."
 cp database_export.json database_export.csv database_import.sql "$DEPLOY_DIR/"
 
-# Temporarily rename .gcloudignore to allow export files in build
-echo "   Temporarily allowing export files in Cloud Build..."
-if [ -f "$DEPLOY_DIR/.gcloudignore" ]; then
-    mv "$DEPLOY_DIR/.gcloudignore" "$DEPLOY_DIR/.gcloudignore.backup"
-fi
+# Create a custom .gcloudignore that allows export files
+echo "   Creating custom .gcloudignore for data deployment..."
+cat > "$DEPLOY_DIR/.gcloudignore" << 'EOF'
+# Exclude virtual environments
+venv/
+env/
+ENV/
+
+# Exclude IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Exclude OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Exclude test coverage
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Exclude logs
+*.log
+logs/
+
+# Exclude environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Exclude temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Exclude documentation builds
+docs/_build/
+
+# Exclude Jupyter Notebook
+.ipynb_checkpoints
+
+# Exclude pyenv
+.python-version
+
+# Exclude pipenv
+Pipfile.lock
+
+# Exclude PEP 582
+__pypackages__/
+
+# Exclude Celery
+celerybeat-schedule
+celerybeat.pid
+
+# Exclude SageMath parsed files
+*.sage.py
+
+# Exclude Spyder project settings
+.spyderproject
+.spyproject
+
+# Exclude Rope project settings
+.ropeproject
+
+# Exclude mkdocs documentation
+/site
+
+# Exclude mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Exclude local database files (but allow export files)
+*.db
+*.db.backup
+*.db.old
+*.sqlite
+*.sqlite3
+
+# IMPORTANT: Do NOT exclude export files for data deployment
+# database_export.json
+# database_export.csv
+# database_import.sql
+EOF
 
 echo "✅ Deployment files prepared in $DEPLOY_DIR"
 
@@ -122,11 +215,8 @@ gcloud builds submit --config cloudbuild.yaml .
 # Change back to original directory
 cd "$ORIGINAL_DIR"
 
-# Restore .gcloudignore file if it was backed up
-if [ -f "$DEPLOY_DIR/.gcloudignore.backup" ]; then
-    echo "   Restoring .gcloudignore file..."
-    mv "$DEPLOY_DIR/.gcloudignore.backup" "$DEPLOY_DIR/.gcloudignore"
-fi
+# Note: Custom .gcloudignore was created for this deployment
+# It will be cleaned up with the temporary directory
 
 # Step 7: Configure access permissions
 echo "🔐 Step 7: Configuring access permissions..."

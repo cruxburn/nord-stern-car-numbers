@@ -58,50 +58,44 @@ if gcloud run services describe $SERVICE_NAME --region=$REGION --quiet &>/dev/nu
     echo "   Found existing service, attempting to export current data..."
     
     # Create a temporary script to export data from the running service
-    cat > export_production_data.py << 'EOF'
-#!/usr/bin/env python3
+    cat > export_production_data.sh << 'EOF'
+#!/bin/bash
 """
 Script to export data from the production database via HTTP API.
-This runs inside the Cloud Run container to export data before deployment.
+This uses curl to export data before deployment.
 """
-import requests
-import json
-import sys
-import os
+set -e
 
-def export_production_data():
-    """Export production data via HTTP API."""
-    try:
-        # Get the service URL from environment or construct it
-        service_url = os.environ.get('SERVICE_URL', 'https://nord-stern-car-numbers-53xwewtdza-uc.a.run.app')
-        
-        # Export data via API endpoint (we'll need to add this to app.py)
-        response = requests.get(f"{service_url}/api/export", timeout=30)
-        
-        if response.status_code == 200:
-            data = response.json()
-            
-            # Save to file
-            with open('production_data_backup.json', 'w') as f:
-                json.dump(data, f, indent=2)
-            
-            print(f"✅ Successfully exported {data.get('total_registrations', 0)} registrations")
-            return True
-        else:
-            print(f"❌ Failed to export data: HTTP {response.status_code}")
-            return False
-            
-    except Exception as e:
-        print(f"❌ Error exporting data: {e}")
-        return False
+# Get the current service URL
+SERVICE_URL=$(gcloud run services describe nord-stern-car-numbers --region=us-central1 --format="value(status.url)")
 
-if __name__ == "__main__":
-    success = export_production_data()
-    sys.exit(0 if success else 1)
+echo "📊 Exporting data from production service..."
+echo "   Service URL: $SERVICE_URL"
+
+# Export data via API endpoint using curl
+if curl -s -f "$SERVICE_URL/api/export" > production_data_backup.json; then
+    # Check if the response is valid JSON
+    if python -c "import json; json.load(open('production_data_backup.json'))" 2>/dev/null; then
+        # Get registration count
+        REGISTRATION_COUNT=$(python -c "import json; data=json.load(open('production_data_backup.json')); print(data.get('total_registrations', 0))")
+        echo "✅ Successfully exported $REGISTRATION_COUNT registrations"
+        exit 0
+    else
+        echo "❌ Invalid JSON response from API"
+        rm -f production_data_backup.json
+        exit 1
+    fi
+else
+    echo "❌ Failed to export data from production service"
+    rm -f production_data_backup.json
+    exit 1
+fi
 EOF
 
+    chmod +x export_production_data.sh
+
     # Try to export data from the running service
-    if python export_production_data.py; then
+    if ./export_production_data.sh; then
         echo "   ✅ Production data exported successfully"
         HAS_PRODUCTION_DATA=true
     else
@@ -110,7 +104,7 @@ EOF
     fi
     
     # Clean up temporary script
-    rm -f export_production_data.py
+    rm -f export_production_data.sh
 else
     echo "   ℹ️  No existing service found, skipping data export"
     HAS_PRODUCTION_DATA=false
@@ -126,13 +120,110 @@ if [ "$HAS_PRODUCTION_DATA" = true ] && [ -f "production_data_backup.json" ]; th
     DEPLOY_DIR="deploy_temp_$(date +%s)"
     mkdir -p "$DEPLOY_DIR"
     
-    # Copy all files except backup file
+    # Copy all files except export files
     echo "   Copying application files..."
-    rsync -av --exclude='production_data_backup.json' --exclude='venv/' --exclude='.git/' --exclude='deploy_temp_*/' . "$DEPLOY_DIR/"
+    rsync -av --exclude='production_data_backup.json' --exclude='database_export.json' --exclude='database_export.csv' --exclude='database_import.sql' --exclude='venv/' --exclude='.git/' --exclude='deploy_temp_*/' . "$DEPLOY_DIR/"
     
     # Copy backup file to deployment directory
     echo "   Copying production data backup..."
     cp production_data_backup.json "$DEPLOY_DIR/"
+    
+    # Create a custom .gcloudignore that allows backup files
+    echo "   Creating custom .gcloudignore for data preservation..."
+    cat > "$DEPLOY_DIR/.gcloudignore" << 'EOF'
+# Exclude virtual environments
+venv/
+env/
+ENV/
+
+# Exclude IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Exclude OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Exclude test coverage
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Exclude logs
+*.log
+logs/
+
+# Exclude environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Exclude temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Exclude documentation builds
+docs/_build/
+
+# Exclude Jupyter Notebook
+.ipynb_checkpoints
+
+# Exclude pyenv
+.python-version
+
+# Exclude pipenv
+Pipfile.lock
+
+# Exclude PEP 582
+__pypackages__/
+
+# Exclude Celery
+celerybeat-schedule
+celerybeat.pid
+
+# Exclude SageMath parsed files
+*.sage.py
+
+# Exclude Spyder project settings
+.spyderproject
+.spyproject
+
+# Exclude Rope project settings
+.ropeproject
+
+# Exclude mkdocs documentation
+/site
+
+# Exclude mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Exclude local database files (but allow backup files)
+*.db
+*.db.backup
+*.db.old
+*.sqlite
+*.sqlite3
+
+# IMPORTANT: Do NOT exclude backup files for data preservation
+# production_data_backup.json
+EOF
     
     # Store current directory
     ORIGINAL_DIR=$(pwd)
