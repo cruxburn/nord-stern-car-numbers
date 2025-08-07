@@ -1,10 +1,11 @@
-name: Deploy Nord Stern Car Numbers to Cloud Run
+name: Test and Deploy Nord Stern Car Numbers
 
 on:
   push:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
+  workflow_dispatch:  # Allow manual triggering
 
 env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
@@ -12,8 +13,36 @@ env:
   SERVICE_NAME: nord-stern-car-numbers
 
 jobs:
-  deploy:
+  test:
     runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r requirements-test.txt
+    
+    - name: Run tests
+      run: |
+        python run_tests.py -v
+    
+    - name: Test coverage
+      run: |
+        python -m pytest --cov=. --cov-report=html --cov-report=term-missing
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'  # Only deploy from main/master
     
     steps:
     - name: Checkout code
