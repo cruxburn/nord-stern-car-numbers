@@ -9,7 +9,10 @@ tests/
 ├── __init__.py
 ├── test_app.py          # Main application tests
 ├── test_database.py     # Database operation tests
-└── test_utils.py        # Utility and edge case tests
+├── test_utils.py        # Utility and edge case tests
+├── test_sort_order.py   # Sort order functionality tests
+├── test_migration.py    # Database migration tests
+└── test_export_import.py # Export/import functionality tests
 ```
 
 ## 🚀 Quick Start
@@ -21,7 +24,7 @@ tests/
 pip install -r requirements-test.txt
 
 # Or install individually
-pip install coverage pytest pytest-cov pytest-flask
+pip install coverage pytest pytest-cov pytest-flask black flake8
 ```
 
 ### Run All Tests
@@ -58,19 +61,37 @@ pytest
 - **Boundary Testing**: Empty databases, extreme values
 - **Error Handling**: Invalid inputs, missing data
 
+### 4. Sort Order Tests (`test_sort_order.py`)
+- **Numeric Sorting**: Proper ordering of car numbers
+- **Duplicate Handling**: Multiple registrations with same number
+- **Invalid Numbers**: Non-numeric car number handling
+
+### 5. Migration Tests (`test_migration.py`)
+- **Schema Updates**: Database migration functionality
+- **Data Preservation**: Ensuring no data loss during migrations
+- **Sort Order Population**: Correct calculation of sort_order values
+
+### 6. Export/Import Tests (`test_export_import.py`)
+- **Data Export**: JSON, CSV, and SQL export functionality
+- **Data Import**: Production database initialization
+- **Data Integrity**: Ensuring exported data matches source
+
 ## 🛠️ Running Tests
 
 ### Basic Test Commands
 
 ```bash
-# Run all tests
+# Run all tests (includes quality checks)
 python run_tests.py
 
 # Run with verbose output
-python run_tests.py --verbose
+python run_tests.py -v
 
 # Run with coverage report
-python run_tests.py --coverage
+python run_tests.py --cov
+
+# Run quality checks only
+python check_quality.py
 
 # List all available tests
 python run_tests.py --list
@@ -109,6 +130,34 @@ pytest -k "test_home"
 
 # Run tests with markers
 pytest -m "unit"
+```
+
+## 🎨 Code Quality Checks
+
+The test suite includes automated code quality checks:
+
+### Black Formatting
+```bash
+# Check formatting
+black --check --diff .
+
+# Auto-format code
+black .
+```
+
+### Flake8 Linting
+```bash
+# Run critical linting checks
+flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+
+# Run all linting checks
+flake8 . --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
+```
+
+### Quality Check Script
+```bash
+# Run all quality checks
+python check_quality.py
 ```
 
 ## 📊 Coverage Reports
