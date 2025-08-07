@@ -36,17 +36,31 @@ The database schema has been enhanced with the following new fields:
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `last_usage_date` | DATE | Date of the most recent usage |
+| `last_usage_year` | INTEGER | Year of the most recent usage |
 | `expiration_date` | DATE | Calculated expiration date |
 | `usage_count` | INTEGER | Total number of times used |
 | `is_active_in_period` | BOOLEAN | Whether registration is active in current period |
+| `sort_order` | INTEGER | Numeric value for sorting (derived from car_number) |
 
 ### Database Migration
 
-The migration script (`migrate_rolling_period.py`) automatically:
-- Adds new columns to existing database
+The migration scripts automatically handle schema updates:
+
+**`migrate_sort_order.py`:**
+- Adds `sort_order` column to existing database
+- Calculates numeric sort values from car_number
+- Handles invalid car numbers gracefully
+
+**`migrate_rolling_period.py`:**
+- Adds usage tracking columns (`last_usage_year`, `usage_count`, `expiration_date`, `is_active_in_period`)
 - Calculates initial expiration dates for existing records
 - Sets appropriate active/inactive status
+
+**Database Indexes:**
+- `idx_car_number` - Fast car number lookups
+- `idx_sort_order` - Efficient sorting operations
+- `idx_name` - Name-based searches
+- `idx_status` - Status-based queries
 
 ## Application Features
 
@@ -63,6 +77,13 @@ The migration script (`migrate_rolling_period.py`) automatically:
 POST /api/record_usage/<id>
 ```
 
+**Usage Recording Process:**
+- System prompts for usage year (defaults to current year)
+- Updates `last_usage_year` with the specified year
+- Increments `usage_count` by 1
+- Calculates new `expiration_date` (3 years from usage year)
+- Sets `is_active_in_period` to true
+
 ### 2. Expiration Tracking
 
 **Visual Indicators:**
@@ -71,9 +92,10 @@ POST /api/record_usage/<id>
 - **Red Badge**: Expired registration
 
 **Search Results Display:**
-- Expiration date column shows the calculated expiration
-- Usage column shows last usage date and total count
+- Expiration date column shows the calculated expiration (YYYY format)
+- Usage column shows last usage year and total count
 - Status column reflects current active/inactive state
+- Car numbers are sorted by `sort_order` for proper numeric ordering
 
 ### 3. Statistics Dashboard
 
@@ -87,15 +109,15 @@ POST /api/record_usage/<id>
 
 **Expiration Date Logic:**
 ```python
-if last_usage_date:
-    expiration_date = last_usage_date + 3 years
+if last_usage_year:
+    expiration_date = f"{last_usage_year + 3}-01-01"
 else:
-    expiration_date = reserved_date + 3 years
+    expiration_date = f"{reserved_for_year + 3}-01-01"
 ```
 
 **Active Status Logic:**
 ```python
-is_active = (current_date <= expiration_date) and (status == 'Active')
+is_active = (current_year <= expiration_year) and (status == 'Active')
 ```
 
 ## Business Rules

@@ -43,7 +43,7 @@ gcloud config set project YOUR_PROJECT_ID
 # Enable required APIs
 gcloud services enable cloudbuild.googleapis.com
 gcloud services enable run.googleapis.com
-gcloud services enable containerregistry.googleapis.com
+gcloud services enable artifactregistry.googleapis.com
 ```
 
 #### Step 4: Deploy the Application
@@ -56,6 +56,10 @@ gcloud services enable containerregistry.googleapis.com
 
 2. **Run the deployment:**
    ```bash
+   # First deployment with data
+   ./deploy_with_data.sh
+   
+   # Subsequent deployments
    ./deploy.sh
    ```
 
@@ -63,6 +67,25 @@ gcloud services enable containerregistry.googleapis.com
    ```
    https://nord-stern-car-numbers-xxxxx-uc.a.run.app
    ```
+
+### Deployment Scripts
+
+**`deploy_with_data.sh`** - First deployment with local data:
+- Exports local database to JSON/CSV/SQL formats
+- Includes exported data in Docker image
+- Deploys to Cloud Run with data pre-loaded
+- Perfect for initial production deployment
+
+**`deploy.sh`** - Subsequent deployments:
+- Standard deployment without data export
+- Updates application code only
+- Preserves existing production data
+
+**`setup-deployment.sh`** - Initial GCP setup:
+- Creates required GCP resources
+- Sets up IAM permissions
+- Configures Artifact Registry
+- One-time setup script
 
 ### Option 2: Google App Engine
 
