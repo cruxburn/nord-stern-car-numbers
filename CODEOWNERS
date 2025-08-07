@@ -1,0 +1,26 @@
+# Global owners
+* @cruxburn
+
+# Core application files
+/app.py @cruxburn
+/templates/ @cruxburn
+/requirements.txt @cruxburn
+/Dockerfile @cruxburn
+
+# Database and migration files
+*.db @cruxburn
+/migrate_*.py @cruxburn
+/init_*.py @cruxburn
+/export_*.py @cruxburn
+
+# Deployment configuration
+/cloudbuild.yaml @cruxburn
+/deploy*.sh @cruxburn
+/.github/ @cruxburn
+
+# Tests
+/tests/ @cruxburn
+/test_*.py @cruxburn
+
+# Documentation
+/*.md @cruxburn 
