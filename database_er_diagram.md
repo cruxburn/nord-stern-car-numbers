@@ -15,7 +15,7 @@ erDiagram
         text first_name "Driver's First Name (Required)"
         text last_name "Driver's Last Name (Required)"
         text car_number "Car Number (Required, NOT UNIQUE)"
-        int sort_order "Numeric Sort Order (Required)"
+        int sort_order "Numeric Sort Order"
         text car_make "Car Make (e.g., BMW, Porsche)"
         text car_model "Car Model (e.g., M3, 911)"
         int car_year "Car Year (e.g., 2020)"
@@ -25,6 +25,7 @@ erDiagram
         text status "Status (Active/Retired/Pending)"
         text notes "Additional Notes"
         int last_usage_year "Last Year Usage Was Recorded"
+        date expiration_date "Expiration Date (Calculated)"
         int usage_count "Total Number of Usage Records"
         boolean is_active_in_period "Active in Current Rolling Period"
         timestamp created_at "Record Creation Timestamp"
@@ -44,7 +45,7 @@ erDiagram
 | `first_name` | TEXT | NOT NULL | Driver's first name |
 | `last_name` | TEXT | NOT NULL | Driver's last name |
 | `car_number` | TEXT | NOT NULL | Car number (preserves original format) |
-| `sort_order` | INTEGER | NOT NULL | Numeric value for sorting (converted from car_number) |
+| `sort_order` | INTEGER | NULL | Numeric value for sorting (converted from car_number) |
 | `car_make` | TEXT | NULL | Manufacturer (e.g., BMW, Porsche, Audi) |
 | `car_model` | TEXT | NULL | Model name (e.g., M3, 911, RS4) |
 | `car_year` | INTEGER | NULL | Manufacturing year |
@@ -54,8 +55,9 @@ erDiagram
 | `status` | TEXT | DEFAULT 'Active' | Registration status |
 | `notes` | TEXT | NULL | Additional information |
 | `last_usage_year` | INTEGER | NULL | Last year usage was recorded |
+| `expiration_date` | DATE | NULL | Calculated expiration date based on usage |
 | `usage_count` | INTEGER | DEFAULT 0 | Total number of usage records |
-| `is_active_in_period` | BOOLEAN | DEFAULT 0 | Active in current 3-year rolling period |
+| `is_active_in_period` | BOOLEAN | DEFAULT 1 | Active in current 3-year rolling period |
 | `created_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Record creation time |
 | `updated_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Last update time |
 
@@ -70,11 +72,17 @@ erDiagram
 - `id` - Primary key constraint only
 - `car_number` - **NO LONGER UNIQUE** (allows duplicate car numbers)
 
+### **Database Indexes**
+- `idx_car_number` - Index on `car_number` for fast lookups
+- `idx_sort_order` - Index on `sort_order` for efficient sorting
+- `idx_name` - Composite index on `first_name, last_name` for name searches
+- `idx_status` - Index on `status` for status-based queries
+
 ### **Required Fields**
 - `first_name` - Must be provided
 - `last_name` - Must be provided  
 - `car_number` - Must be provided (but not unique)
-- `sort_order` - Must be provided (calculated from car_number)
+- `sort_order` - Calculated from car_number (can be NULL for invalid numbers)
 
 ---
 
@@ -114,6 +122,7 @@ graph TD
 
 ### **Usage Tracking**
 - `last_usage_year` tracks the most recent year usage was recorded
+- `expiration_date` stores the calculated expiration date based on usage and reservation
 - `usage_count` tracks total number of usage records
 - `is_active_in_period` indicates if registration is active in current 3-year rolling period
 
@@ -198,7 +207,7 @@ WHERE id=?;
 ```sql
 UPDATE car_registrations 
 SET last_usage_year=?, usage_count=usage_count+1, 
-    is_active_in_period=1, updated_at=CURRENT_TIMESTAMP
+    expiration_date=?, is_active_in_period=1, updated_at=CURRENT_TIMESTAMP
 WHERE id=?;
 ```
 
@@ -219,11 +228,11 @@ DELETE FROM car_registrations WHERE id = ?;
 
 ## 📊 Sample Data Structure
 
-| id | first_name | last_name | car_number | sort_order | car_make | car_model | car_year | car_color | status | last_usage_year | usage_count | is_active_in_period | created_at |
-|----|------------|-----------|------------|------------|----------|-----------|----------|-----------|--------|-----------------|-------------|-------------------|------------|
-| 1 | John | Doe | 001 | 1 | BMW | M3 | 2020 | Black | Active | 2024 | 3 | 1 | 2025-01-15 10:30:00 |
-| 2 | Jane | Smith | 1 | 1 | Porsche | 911 | 2021 | Red | Active | 2023 | 2 | 0 | 2025-01-15 11:15:00 |
-| 3 | Bob | Johnson | 014 | 14 | Audi | RS4 | 2019 | Silver | Retired | 2022 | 1 | 0 | 2025-01-15 12:00:00 |
+| id | first_name | last_name | car_number | sort_order | car_make | car_model | car_year | car_color | status | last_usage_year | expiration_date | usage_count | is_active_in_period | created_at |
+|----|------------|-----------|------------|------------|----------|-----------|----------|-----------|--------|-----------------|-----------------|-------------|-------------------|------------|
+| 1 | John | Doe | 001 | 1 | BMW | M3 | 2020 | Black | Active | 2024 | 2027-01-01 | 3 | 1 | 2025-01-15 10:30:00 |
+| 2 | Jane | Smith | 1 | 1 | Porsche | 911 | 2021 | Red | Active | 2023 | 2026-01-01 | 2 | 0 | 2025-01-15 11:15:00 |
+| 3 | Bob | Johnson | 014 | 14 | Audi | RS4 | 2019 | Silver | Retired | 2022 | 2025-01-01 | 1 | 0 | 2025-01-15 12:00:00 |
 
 ---
 
@@ -242,7 +251,9 @@ DELETE FROM car_registrations WHERE id = ?;
 1. **Removed UNIQUE constraint** from `car_number` column
 2. **Added `sort_order` column** for proper numeric sorting
 3. **Added usage tracking columns**: `last_usage_year`, `usage_count`, `is_active_in_period`
-4. **Updated sorting logic** to use `sort_order` for consistent display
+4. **Added `expiration_date` column** for calculated expiration dates
+5. **Updated sorting logic** to use `sort_order` for consistent display
+6. **Added database indexes** for improved query performance
 
 ### **Migration Script:**
 The `migrate_sort_order.py` script handles adding the `sort_order` column and populating it with numeric values derived from `car_number`.
