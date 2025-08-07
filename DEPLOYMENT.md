@@ -9,7 +9,7 @@ This guide will help you deploy the Nord Stern Car Numbers application in your G
 3. **Docker** - For building container images
 4. **Git** - For version control
 
-## 🎯 Deployment Options
+## 🎯 Deployment Option(s)
 
 ### Option 1: Google Cloud Run (Recommended)
 
