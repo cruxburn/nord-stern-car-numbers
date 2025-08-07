@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}Add Registration - Nord Stern Car Numbers{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-plus me-2"></i> Add New Car Number Registration</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" id="registrationForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card border-0 bg-light">
+                                <div class="card-body">
+                                    <h6 class="fw-bold text-primary mb-4">
+                                        <i class="fas fa-user me-2"></i> Driver Information
+                                    </h6>
+                                    <div class="mb-4">
+                                        <label for="first_name" class="form-label">First Name *</label>
+                                        <input type="text" class="form-control" id="first_name" name="first_name" required>
+                                    </div>
+                                    <div class="mb-4">
+                                        <label for="last_name" class="form-label">Last Name *</label>
+                                        <input type="text" class="form-control" id="last_name" name="last_name" required>
+                                    </div>
+                                    <div class="mb-4">
+                                        <label for="car_number" class="form-label">Car Number *</label>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control" id="car_number" name="car_number" required min="0">
+                                            <button type="button" class="btn btn-outline-secondary" onclick="checkNumberAvailability()">
+                                                <i class="fas fa-search me-2"></i> Check
+                                            </button>
+                                        </div>
+                                        <div id="numberStatus" class="form-text mt-2"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card border-0 bg-light">
+                                <div class="card-body">
+                                    <h6 class="fw-bold text-primary mb-4">
+                                        <i class="fas fa-car me-2"></i> Car Information
+                                    </h6>
+                                    <div class="mb-4">
+                                        <label for="car_make" class="form-label">Car Make</label>
+                                        <input type="text" class="form-control" id="car_make" name="car_make" placeholder="e.g., BMW, Porsche, Audi">
+                                    </div>
+                                    <div class="mb-4">
+                                        <label for="car_model" class="form-label">Car Model</label>
+                                        <input type="text" class="form-control" id="car_model" name="car_model" placeholder="e.g., 911, M3, RS4">
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-4">
+                                                <label for="car_year" class="form-label">Year</label>
+                                                <input type="number" class="form-control" id="car_year" name="car_year" min="1900" max="2030" placeholder="e.g., 2020">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-4">
+                                                <label for="car_color" class="form-label">Color</label>
+                                                <input type="text" class="form-control" id="car_color" name="car_color" placeholder="e.g., Red, Blue, Silver">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <div class="card border-0 bg-light">
+                                <div class="card-body">
+                                    <h6 class="fw-bold text-primary mb-4">
+                                        <i class="fas fa-calendar me-2"></i> Reservation Details
+                                    </h6>
+                                    <div class="mb-4">
+                                        <label for="reserved_date" class="form-label">Reserved Date</label>
+                                        <input type="date" class="form-control" id="reserved_date" name="reserved_date" value="{{ today }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card border-0 bg-light">
+                                <div class="card-body">
+                                    <h6 class="fw-bold text-primary mb-4">
+                                        <i class="fas fa-sticky-note me-2"></i> Additional Information
+                                    </h6>
+                                    <div class="mb-4">
+                                        <label for="notes" class="form-label">Notes</label>
+                                        <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Any additional notes about this registration..."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-5">
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('search') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i> Back to Search
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save me-2"></i> Save Registration
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Number Availability Modal -->
+<div class="modal fade" id="availabilityModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">
+                    <i class="fas fa-info-circle text-primary me-2"></i>Car Number Availability
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="availabilityContent">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Set today's date as default
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('reserved_date').value = today;
+});
+
+function checkNumberAvailability() {
+    const number = document.getElementById('car_number').value;
+    const statusDiv = document.getElementById('numberStatus');
+    
+    if (!number) {
+        statusDiv.innerHTML = '<span class="text-warning fw-bold"><i class="fas fa-exclamation-triangle me-2"></i>Please enter a car number first.</span>';
+        return;
+    }
+    
+    statusDiv.innerHTML = '<span class="text-info fw-bold"><i class="fas fa-spinner fa-spin me-2"></i>Checking availability...</span>';
+    
+    fetch(`/api/check_number/${number}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.available) {
+                statusDiv.innerHTML = '<span class="text-success fw-bold"><i class="fas fa-check me-2"></i>Car number is available!</span>';
+            } else {
+                statusDiv.innerHTML = '<span class="text-danger fw-bold"><i class="fas fa-times me-2"></i>Car number is already taken by ' + data.driver + '</span>';
+                
+                // Show detailed modal
+                const modal = new bootstrap.Modal(document.getElementById('availabilityModal'));
+                document.getElementById('availabilityContent').innerHTML = `
+                    <div class="alert alert-warning">
+                        <h6 class="fw-bold">Car Number ${number} is already registered</h6>
+                        <p class="mb-2"><strong>Driver:</strong> ${data.driver}</p>
+                        <p class="mb-0"><strong>Car:</strong> ${data.car_info || 'No car details available'}</p>
+                    </div>
+                `;
+                modal.show();
+            }
+        })
+        .catch(error => {
+            statusDiv.innerHTML = '<span class="text-danger fw-bold"><i class="fas fa-exclamation-triangle me-2"></i>Error checking availability. Please try again.</span>';
+            console.error('Error:', error);
+        });
+}
+
+// Auto-check availability when number is entered
+document.getElementById('car_number').addEventListener('blur', function() {
+    if (this.value) {
+        checkNumberAvailability();
+    }
+});
+
+// Form validation
+document.getElementById('registrationForm').addEventListener('submit', function(e) {
+    const firstName = document.getElementById('first_name').value.trim();
+    const lastName = document.getElementById('last_name').value.trim();
+    const carNumber = document.getElementById('car_number').value;
+    
+    if (!firstName || !lastName || !carNumber) {
+        e.preventDefault();
+        alert('Please fill in all required fields (First Name, Last Name, and Car Number).');
+        return false;
+    }
+    
+    if (carNumber < 0) {
+        e.preventDefault();
+        alert('Car number must be a positive number.');
+        return false;
+    }
+});
+</script>
+{% endblock %} 

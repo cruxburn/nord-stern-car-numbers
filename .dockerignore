@@ -1,0 +1,60 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+README.md
+*.md
+
+# Development files
+debug_import.py
+import_excel_data.py
+add_sample_data.py
+migrate_*.py
+clear_database*.py
+cleanup_usage_columns.py
+test_rolling_period.py
+check_columns.py
+generate_schema_pdf.py
+
+# Test files
+tests/
+htmlcov/
+.coverage
+pytest.ini
+requirements-test.txt
+README_TESTING.md
+
+# Database backups
+*.db.backup
+*.db.old
+
+# Database files (should not be in production image)
+*.db
+
+# Export files (will be copied separately for first deployment)
+database_export.json
+database_export.csv
+database_import.sql 

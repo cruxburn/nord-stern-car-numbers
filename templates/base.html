@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Nord Stern Car Numbers{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --porsche-red: #dc3545;
+            --porsche-dark: #1a1a1a;
+            --porsche-gray: #6c757d;
+            --porsche-light-gray: #f8f9fa;
+            --porsche-border: #dee2e6;
+            --porsche-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --porsche-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.15);
+            --porsche-tab-active: #dc3545;
+            --porsche-tab-inactive: #f8f9fa;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #ffffff;
+            color: #333333;
+            line-height: 1.6;
+        }
+
+        /* Navigation - Porsche Style */
+        .navbar {
+            background: linear-gradient(135deg, var(--porsche-dark) 0%, #2d2d2d 100%) !important;
+            box-shadow: var(--porsche-shadow);
+            padding: 1rem 0;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: #ffffff !important;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .navbar-brand i {
+            color: var(--porsche-red);
+            margin-right: 0.5rem;
+        }
+
+        .navbar-nav .nav-link {
+            color: #ffffff !important;
+            font-weight: 500;
+            padding: 0.75rem 1.25rem !important;
+            transition: all 0.3s ease;
+            border-radius: 6px;
+            margin: 0 0.25rem;
+        }
+
+        .navbar-nav .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--porsche-red) !important;
+            transform: translateY(-1px);
+        }
+
+        .navbar-nav .nav-link i {
+            margin-right: 0.5rem;
+            width: 16px;
+        }
+
+        /* Main Content Area - Porsche Product Page Style */
+        .main-content {
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            min-height: calc(100vh - 200px);
+            padding: 2rem 0;
+        }
+
+        /* Cards - Porsche Premium Style */
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: var(--porsche-shadow);
+            transition: all 0.3s ease;
+            overflow: hidden;
+            background: #ffffff;
+        }
+
+        .card:hover {
+            box-shadow: var(--porsche-shadow-hover);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--porsche-dark) 0%, #2d2d2d 100%);
+            color: #ffffff;
+            border: none;
+            padding: 1.25rem 1.5rem;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .card-header h5 {
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .card-body {
+            padding: 2rem;
+        }
+
+        /* Tabs - Porsche Product Page Style */
+        .nav-tabs {
+            border: none;
+            background: var(--porsche-tab-inactive);
+            border-radius: 8px;
+            padding: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .nav-tabs .nav-link {
+            border: none;
+            border-radius: 6px;
+            color: var(--porsche-gray);
+            font-weight: 500;
+            padding: 0.75rem 1.5rem;
+            margin: 0 0.25rem;
+            transition: all 0.3s ease;
+            background: transparent;
+        }
+
+        .nav-tabs .nav-link:hover {
+            background: rgba(220, 53, 69, 0.1);
+            color: var(--porsche-red);
+        }
+
+        .nav-tabs .nav-link.active {
+            background: var(--porsche-tab-active);
+            color: #ffffff;
+            box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+        }
+
+        .nav-tabs .nav-link i {
+            margin-right: 0.5rem;
+            width: 16px;
+        }
+
+        /* Buttons - Porsche Style */
+        .btn {
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.875rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--porsche-red) 0%, #c82333 100%);
+            border: none;
+            color: #ffffff;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #c82333 0%, #a71e2a 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border: none;
+            color: #ffffff;
+        }
+
+        .btn-success:hover {
+            background: linear-gradient(135deg, #20c997 0%, #17a2b8 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--porsche-gray) 0%, #5a6268 100%);
+            border: none;
+            color: #ffffff;
+        }
+
+        .btn-outline-primary {
+            border: 2px solid var(--porsche-red);
+            color: var(--porsche-red);
+            background: transparent;
+        }
+
+        .btn-outline-primary:hover {
+            background: var(--porsche-red);
+            border-color: var(--porsche-red);
+            color: #ffffff;
+        }
+
+        .btn-outline-danger {
+            border: 2px solid #dc3545;
+            color: #dc3545;
+            background: transparent;
+        }
+
+        .btn-outline-danger:hover {
+            background: #dc3545;
+            border-color: #dc3545;
+            color: #ffffff;
+        }
+
+        /* Forms - Porsche Style */
+        .form-control {
+            border: 2px solid var(--porsche-border);
+            border-radius: 8px;
+            padding: 0.875rem 1rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background-color: #ffffff;
+        }
+
+        .form-control:focus {
+            border-color: var(--porsche-red);
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+            background-color: #ffffff;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--porsche-dark);
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Tables - Porsche Style */
+        .table {
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: var(--porsche-shadow);
+        }
+
+        .table-dark {
+            background: linear-gradient(135deg, var(--porsche-dark) 0%, #2d2d2d 100%);
+            color: #ffffff;
+        }
+
+        .table-striped > tbody > tr:nth-of-type(odd) {
+            background-color: rgba(248, 249, 250, 0.5);
+        }
+
+        .table-hover > tbody > tr:hover {
+            background-color: rgba(220, 53, 69, 0.05);
+        }
+
+        /* Badges - Porsche Style */
+        .badge {
+            font-weight: 600;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge.bg-primary {
+            background: linear-gradient(135deg, var(--porsche-red) 0%, #c82333 100%) !important;
+        }
+
+        .badge.bg-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+        }
+
+        /* Alerts - Porsche Style */
+        .alert {
+            border: none;
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background: linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(32, 201, 151, 0.1) 100%);
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+
+        .alert-danger {
+            background: linear-gradient(135deg, rgba(220, 53, 69, 0.1) 0%, rgba(200, 35, 51, 0.1) 100%);
+            color: #721c24;
+            border-left: 4px solid var(--porsche-red);
+        }
+
+        /* Progress bars - Porsche Style */
+        .progress {
+            height: 8px;
+            border-radius: 4px;
+            background-color: var(--porsche-light-gray);
+        }
+
+        .progress-bar {
+            background: linear-gradient(135deg, var(--porsche-red) 0%, #c82333 100%);
+        }
+
+        /* Footer - Porsche Style */
+        .footer {
+            background: linear-gradient(135deg, var(--porsche-dark) 0%, #2d2d2d 100%);
+            color: #ffffff;
+            padding: 2rem 0;
+            margin-top: 4rem;
+            text-align: center;
+        }
+
+        .footer p {
+            margin: 0;
+            font-weight: 400;
+            opacity: 0.8;
+        }
+
+        /* Utility Classes */
+        .text-primary {
+            color: var(--porsche-red) !important;
+        }
+
+        .bg-primary {
+            background-color: var(--porsche-red) !important;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .card-body {
+                padding: 1.5rem;
+            }
+            
+            .navbar-nav .nav-link {
+                padding: 0.5rem 1rem !important;
+                margin: 0.25rem 0;
+            }
+
+            .nav-tabs {
+                flex-direction: column;
+            }
+
+            .nav-tabs .nav-link {
+                margin: 0.25rem 0;
+            }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--porsche-light-gray);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--porsche-gray);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--porsche-red);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="fas fa-car"></i> Nord Stern Car Numbers
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}">
+                            <i class="fas fa-home"></i> Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('search') }}">
+                            <i class="fas fa-search"></i> Search
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('add_registration') }}">
+                            <i class="fas fa-plus"></i> Add Registration
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('search') }}?q=&show_all=1">
+                            <i class="fas fa-list"></i> Browse All
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('stats') }}">
+                            <i class="fas fa-chart-bar"></i> Statistics
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-content">
+        <div class="container">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Nord Stern Car Club - Drivers Education Car Number Management</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html> 

@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Registration - Nord Stern Car Numbers{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-edit me-2"></i> Edit Car Number Registration</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" id="editForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card border-0 bg-light">
+                                <div class="card-body">
+                                    <h6 class="fw-bold text-primary mb-4">
+                                        <i class="fas fa-user me-2"></i> Driver Information
+                                    </h6>
+                                    <div class="mb-4">
+                                        <label for="first_name" class="form-label">First Name *</label>
+                                        <input type="text" class="form-control" id="first_name" name="first_name" value="{{ registration[1] }}" required>
+                                    </div>
+                                    <div class="mb-4">
+                                        <label for="last_name" class="form-label">Last Name *</label>
+                                        <input type="text" class="form-control" id="last_name" name="last_name" value="{{ registration[2] }}" required>
+                                    </div>
+                                    <div class="mb-4">
+                                        <label for="car_number" class="form-label">Car Number *</label>
+                                        <input type="number" class="form-control" id="car_number" name="car_number" value="{{ registration[3] }}" required min="0">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card border-0 bg-light">
+                                <div class="card-body">
+                                    <h6 class="fw-bold text-primary mb-4">
+                                        <i class="fas fa-car me-2"></i> Car Information
+                                    </h6>
+                                    <div class="mb-4">
+                                        <label for="car_make" class="form-label">Car Make</label>
+                                        <input type="text" class="form-control" id="car_make" name="car_make" value="{{ registration[4] or '' }}" placeholder="e.g., BMW, Porsche, Audi">
+                                    </div>
+                                    <div class="mb-4">
+                                        <label for="car_model" class="form-label">Car Model</label>
+                                        <input type="text" class="form-control" id="car_model" name="car_model" value="{{ registration[5] or '' }}" placeholder="e.g., 911, M3, RS4">
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-4">
+                                                <label for="car_year" class="form-label">Year</label>
+                                                <input type="number" class="form-control" id="car_year" name="car_year" value="{{ registration[6] or '' }}" min="1900" max="2030" placeholder="e.g., 2020">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-4">
+                                                <label for="car_color" class="form-label">Color</label>
+                                                <input type="text" class="form-control" id="car_color" name="car_color" value="{{ registration[7] or '' }}" placeholder="e.g., Red, Blue, Silver">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <div class="card border-0 bg-light">
+                                <div class="card-body">
+                                    <h6 class="fw-bold text-primary mb-4">
+                                        <i class="fas fa-calendar me-2"></i> Reservation Details
+                                    </h6>
+                                    <div class="mb-4">
+                                        <label for="reserved_date" class="form-label">Reserved Date</label>
+                                        <input type="date" class="form-control" id="reserved_date" name="reserved_date" value="{{ registration[9] or '' }}">
+                                    </div>
+                                    <div class="mb-4">
+                                        <label for="status" class="form-label">Status</label>
+                                        <select class="form-select" id="status" name="status">
+                                            <option value="Active" {% if registration[11] == 'Active' %}selected{% endif %}>Active</option>
+                                            <option value="Retired" {% if registration[11] == 'Retired' %}selected{% endif %}>Retired</option>
+                                            <option value="Pending" {% if registration[11] == 'Pending' %}selected{% endif %}>Pending</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card border-0 bg-light">
+                                <div class="card-body">
+                                    <h6 class="fw-bold text-primary mb-4">
+                                        <i class="fas fa-sticky-note me-2"></i> Additional Information
+                                    </h6>
+                                    <div class="mb-4">
+                                        <label for="notes" class="form-label">Notes</label>
+                                        <textarea class="form-control" id="notes" name="notes" rows="4" placeholder="Any additional notes about this registration...">{{ registration[12] or '' }}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-5">
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('search') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i> Back to Search
+                        </a>
+                        <div>
+                            <button type="button" class="btn btn-outline-danger me-2" onclick="confirmDelete()">
+                                <i class="fas fa-trash me-2"></i> Delete
+                            </button>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save me-2"></i> Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>Confirm Delete
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the registration for <strong>{{ registration[1] }} {{ registration[2] }}</strong> (Car #{{ registration[3] }})?</p>
+                <p class="text-danger fw-bold"><small>This action cannot be undone.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form action="{{ url_for('delete_registration', id=registration[0]) }}" method="post" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-2"></i>Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function confirmDelete() {
+    var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    deleteModal.show();
+}
+
+// Form validation
+document.getElementById('editForm').addEventListener('submit', function(e) {
+    const firstName = document.getElementById('first_name').value.trim();
+    const lastName = document.getElementById('last_name').value.trim();
+    const carNumber = document.getElementById('car_number').value;
+    
+    if (!firstName || !lastName || !carNumber) {
+        e.preventDefault();
+        alert('Please fill in all required fields (First Name, Last Name, and Car Number).');
+        return false;
+    }
+    
+    if (carNumber < 0) {
+        e.preventDefault();
+        alert('Car number must be a positive number.');
+        return false;
+    }
+});
+</script>
+{% endblock %} 

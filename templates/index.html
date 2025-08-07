@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Nord Stern Car Numbers{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-search me-2"></i> Quick Search</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('search') }}" method="get" class="row g-4">
+                    <div class="col-md-6">
+                        <label for="quickSearch" class="form-label">Search by Driver Name</label>
+                        <input type="text" class="form-control" id="quickSearch" name="q" placeholder="Enter driver name...">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="quickNumber" class="form-label">Search by Car Number</label>
+                        <input type="number" class="form-control" id="quickNumber" name="number" placeholder="Enter car number...">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">&nbsp;</label>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-search me-2"></i> Search
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Auto-submit form when number is entered
+document.getElementById('quickNumber').addEventListener('input', function() {
+    if (this.value) {
+        document.getElementById('quickSearch').value = '';
+    }
+});
+
+document.getElementById('quickSearch').addEventListener('input', function() {
+    if (this.value) {
+        document.getElementById('quickNumber').value = '';
+    }
+});
+</script>
+{% endblock %} 

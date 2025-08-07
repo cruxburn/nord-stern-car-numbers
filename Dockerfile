@@ -1,0 +1,50 @@
+# Use Python 3.11 slim image
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Copy requirements first for better caching
+COPY requirements.txt .
+
+# Install dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY . .
+
+# Create non-root user for security
+RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+
+# Create startup script
+RUN echo '#!/bin/bash\n\
+if [ -f "/app/database_export.json" ]; then\n\
+    echo "📊 Initializing database with exported data..."\n\
+    python /app/init_production_db.py /app/database_export.json\n\
+elif [ -f "/app/database_import.sql" ]; then\n\
+    echo "📊 Initializing database with SQL data..."\n\
+    python /app/init_production_db.py /app/database_import.sql\n\
+else\n\
+    echo "📊 Initializing empty database..."\n\
+    python /app/init_production_db.py\n\
+fi\n\
+\n\
+echo "🚀 Starting application..."\n\
+exec python app.py' > /app/start.sh && chmod +x /app/start.sh
+
+USER appuser
+
+# Expose port
+EXPOSE 8080
+
+# Set environment variables
+ENV FLASK_APP=app.py
+ENV FLASK_ENV=production
+ENV PORT=8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:8080/ || exit 1
+
+# Run the application
+CMD ["/app/start.sh"] 
