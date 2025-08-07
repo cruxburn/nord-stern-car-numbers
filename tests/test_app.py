@@ -729,13 +729,126 @@ class NordSternCarNumbersTestCase(unittest.TestCase):
         self.assertIn(b"2026", response.data)  # YYYY format
 
     def test_search_results_status_display(self):
-        """Test that search results show status correctly"""
-        response = self.client.get("/search?q=&show_all=1")
+        """Test that search results display status correctly"""
+        response = self.client.get("/search?query=John")
         self.assertEqual(response.status_code, 200)
-
-        # Should show different status badges
         self.assertIn(b"Active", response.data)
         self.assertIn(b"Retired", response.data)
+
+    def test_export_api_endpoint(self):
+        """Test the /api/export endpoint for data preservation"""
+        response = self.client.get("/api/export")
+        self.assertEqual(response.status_code, 200)
+
+        data = response.get_json()
+        self.assertIn("export_date", data)
+        self.assertIn("total_registrations", data)
+        self.assertIn("registrations", data)
+
+        # Check that we have the expected number of registrations
+        self.assertEqual(data["total_registrations"], 11)
+        self.assertEqual(len(data["registrations"]), 11)
+
+        # Check that each registration has all required fields
+        for registration in data["registrations"]:
+            required_fields = [
+                "id",
+                "first_name",
+                "last_name",
+                "car_number",
+                "sort_order",
+                "car_make",
+                "car_model",
+                "car_year",
+                "car_color",
+                "reserved_date",
+                "reserved_for_year",
+                "status",
+                "notes",
+                "last_usage_year",
+                "expiration_date",
+                "usage_count",
+                "is_active_in_period",
+                "created_at",
+                "updated_at",
+            ]
+            for field in required_fields:
+                self.assertIn(field, registration)
+
+    def test_export_api_endpoint_empty_database(self):
+        """Test the /api/export endpoint with empty database"""
+        # Clear the database
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM car_registrations")
+        conn.commit()
+        conn.close()
+
+        response = self.client.get("/api/export")
+        self.assertEqual(response.status_code, 200)
+
+        data = response.get_json()
+        self.assertEqual(data["total_registrations"], 0)
+        self.assertEqual(len(data["registrations"]), 0)
+        self.assertIn("export_date", data)
+
+    def test_export_api_endpoint_data_integrity(self):
+        """Test that exported data maintains integrity"""
+        response = self.client.get("/api/export")
+        self.assertEqual(response.status_code, 200)
+
+        data = response.get_json()
+        registrations = data["registrations"]
+
+        # Find the John Doe registration
+        john_registration = None
+        for reg in registrations:
+            if reg["first_name"] == "John" and reg["last_name"] == "Doe":
+                john_registration = reg
+                break
+
+        self.assertIsNotNone(john_registration)
+        self.assertEqual(john_registration["car_number"], "4")
+        self.assertEqual(john_registration["sort_order"], 4)
+        self.assertEqual(john_registration["car_make"], "BMW")
+        self.assertEqual(john_registration["car_model"], "M3")
+        self.assertEqual(john_registration["car_year"], 2020)
+        self.assertEqual(john_registration["car_color"], "Black")
+        self.assertEqual(john_registration["status"], "Active")
+        self.assertEqual(john_registration["last_usage_year"], 2025)
+        self.assertEqual(john_registration["usage_count"], 1)
+        self.assertTrue(john_registration["is_active_in_period"])
+
+    def test_export_api_endpoint_json_format(self):
+        """Test that exported data is valid JSON"""
+        response = self.client.get("/api/export")
+        self.assertEqual(response.status_code, 200)
+
+        # Verify it's valid JSON
+        import json
+
+        try:
+            data = response.get_json()
+            # Try to serialize it back to JSON
+            json.dumps(data)
+        except (json.JSONDecodeError, TypeError) as e:
+            self.fail(f"Export data is not valid JSON: {e}")
+
+    def test_export_api_endpoint_timestamp_format(self):
+        """Test that export_date is in ISO format"""
+        response = self.client.get("/api/export")
+        self.assertEqual(response.status_code, 200)
+
+        data = response.get_json()
+        export_date = data["export_date"]
+
+        # Check that it's a valid ISO timestamp
+        from datetime import datetime
+
+        try:
+            datetime.fromisoformat(export_date.replace("Z", "+00:00"))
+        except ValueError:
+            self.fail("export_date is not in valid ISO format")
 
 
 if __name__ == "__main__":

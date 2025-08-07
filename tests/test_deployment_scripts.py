@@ -123,31 +123,94 @@ class DeploymentScriptsTestCase(unittest.TestCase):
         # Clean up
         shutil.rmtree(deploy_dir)
 
-    def test_deploy_script_does_not_touch_export_files(self):
-        """Test that deploy.sh does not create or modify export files"""
-        # This test verifies that deploy.sh doesn't create export files
-        # We'll check that the script doesn't reference export file operations
+    def test_deploy_script_does_not_touch_local_export_files(self):
+        """Test that deploy.sh does not create or modify local export files"""
+        # This test verifies that deploy.sh doesn't create local export files
+        # We'll check that the script doesn't reference local export file operations
 
-        # Read the deploy.sh script to verify it doesn't mention export files
+        # Read the deploy.sh script to verify it doesn't mention local export files
         deploy_script_path = os.path.join(self.original_cwd, "deploy.sh")
+        with open(deploy_script_path, "r") as f:
+            script_content = f.read()
 
-        if os.path.exists(deploy_script_path):
-            with open(deploy_script_path, "r") as f:
-                script_content = f.read()
+        # Verify script doesn't mention local export file operations (but can exclude them)
+        local_export_file_operations = [
+            "export_database",
+        ]
 
-            # Verify script doesn't mention export files
-            export_file_mentions = [
-                "database_export",
-                "export_database",
-                "export.*json",
-                "export.*csv",
-                "export.*sql",
-            ]
+        for operation in local_export_file_operations:
+            self.assertNotIn(
+                operation,
+                script_content,
+                f"deploy.sh should not mention local {operation}",
+            )
 
-            for mention in export_file_mentions:
-                self.assertNotIn(
-                    mention, script_content, f"deploy.sh should not mention {mention}"
-                )
+    def test_deploy_script_data_preservation_mechanism(self):
+        """Test that deploy.sh includes data preservation mechanism"""
+        deploy_script_path = os.path.join(self.original_cwd, "deploy.sh")
+        with open(deploy_script_path, "r") as f:
+            script_content = f.read()
+
+        # Verify script includes data preservation features
+        preservation_features = [
+            "production_data_backup.json",
+            "export_production_data",
+            "Preserving current production data",
+        ]
+
+        for feature in preservation_features:
+            self.assertIn(
+                feature, script_content, f"deploy.sh should include {feature}"
+            )
+
+    def test_deploy_script_api_export_endpoint(self):
+        """Test that deploy.sh uses the API export endpoint"""
+        deploy_script_path = os.path.join(self.original_cwd, "deploy.sh")
+        with open(deploy_script_path, "r") as f:
+            script_content = f.read()
+
+        # Verify script uses the API export endpoint
+        self.assertIn(
+            "/api/export", script_content, "deploy.sh should use /api/export endpoint"
+        )
+
+    def test_deploy_script_backup_file_handling(self):
+        """Test that deploy.sh properly handles backup files"""
+        deploy_script_path = os.path.join(self.original_cwd, "deploy.sh")
+        with open(deploy_script_path, "r") as f:
+            script_content = f.read()
+
+        # Verify backup file handling
+        backup_handling = [
+            "production_data_backup.json",
+            "Copying production data backup",
+            "Creating custom .gcloudignore for data preservation",
+        ]
+
+        for handling in backup_handling:
+            self.assertIn(
+                handling, script_content, f"deploy.sh should handle {handling}"
+            )
+
+    def test_deploy_script_excludes_export_files_from_copy(self):
+        """Test that deploy.sh excludes export files from main copy"""
+        deploy_script_path = os.path.join(self.original_cwd, "deploy.sh")
+        with open(deploy_script_path, "r") as f:
+            script_content = f.read()
+
+        # Verify export files are excluded from main copy
+        excluded_files = [
+            "database_export.json",
+            "database_export.csv",
+            "database_import.sql",
+        ]
+
+        for file in excluded_files:
+            self.assertIn(
+                f"--exclude='{file}'",
+                script_content,
+                f"deploy.sh should exclude {file} from main copy",
+            )
 
     def test_deploy_with_data_script_mentions_export_files(self):
         """Test that deploy_with_data.sh properly handles export files"""

@@ -651,6 +651,43 @@ def remove_usage(id):
     return redirect(url_for("search", **redirect_params))
 
 
+@app.route("/api/export")
+def export_data():
+    """Export all registration data as JSON"""
+    try:
+        # Use configured database path or default
+        db_path = app.config.get("DATABASE", "car_numbers.db")
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+
+        # Get all registrations
+        cursor.execute("SELECT * FROM car_registrations")
+        rows = cursor.fetchall()
+
+        # Get column names
+        columns = [description[0] for description in cursor.description]
+
+        # Convert to list of dictionaries
+        registrations = []
+        for row in rows:
+            registration = dict(zip(columns, row))
+            registrations.append(registration)
+
+        # Create export data structure
+        export_data = {
+            "export_date": datetime.now().isoformat(),
+            "total_registrations": len(registrations),
+            "registrations": registrations,
+        }
+
+        conn.close()
+
+        return jsonify(export_data)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/stats")
 def stats():
     # Use configured database path or default

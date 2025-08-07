@@ -140,6 +140,7 @@ CREATE INDEX idx_status ON car_registrations(status);
 - `POST /api/record_usage/<id>` - Record usage for a registration
 - `POST /api/remove_usage/<id>` - Remove usage for a registration
 - `GET /api/check_number/<number>` - Check number availability (JSON)
+- `GET /api/export` - Export all registration data as JSON (for data preservation)
 - `GET /stats` - Statistics page
 
 ## Configuration
@@ -159,9 +160,16 @@ The application supports multiple deployment options:
 # First deployment with data
 ./deploy_with_data.sh
 
-# Subsequent deployments
+# Subsequent deployments (preserves production data)
 ./deploy.sh
 ```
+
+**Data Preservation:**
+The application includes a robust data preservation mechanism for Cloud Run deployments:
+- **Automatic Backup**: `deploy.sh` automatically exports production data before deployment
+- **Data Restoration**: New containers automatically restore data from backup
+- **Zero Data Loss**: Ensures no data is lost during code updates
+- **Ephemeral Storage Solution**: Addresses Cloud Run's ephemeral storage limitation
 
 **Documentation:**
 - `DEPLOYMENT.md` - Complete deployment guide

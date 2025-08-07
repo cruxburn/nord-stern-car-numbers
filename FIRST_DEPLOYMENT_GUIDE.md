@@ -91,12 +91,18 @@ rm database_export.json database_export.csv database_import.sql
 
 ## 🔄 Subsequent Deployments
 
-After the first deployment, you can deploy normally:
+After the first deployment, you can deploy normally with data preservation:
 
 ```bash
-# Deploy normally (without data export/import)
+# Deploy with data preservation (recommended)
 ./deploy.sh
 ```
+
+**Data Preservation:** The `deploy.sh` script now includes automatic data preservation:
+- Exports current production data before deployment
+- Includes backup in the new container
+- Automatically restores data on container startup
+- Ensures zero data loss during code updates
 
 ## 📊 Database Management
 

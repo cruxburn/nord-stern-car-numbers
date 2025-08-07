@@ -85,6 +85,7 @@ dmypy.json
 database_export.json
 database_export.csv
 database_import.sql
+production_data_backup.json
 
 # Exclude local database files (but allow export files)
 *.db
