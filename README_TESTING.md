@@ -7,12 +7,14 @@ This guide covers how to run tests for the NordStern Car Numbers application.
 ```
 tests/
 ├── __init__.py
-├── test_app.py          # Main application tests
-├── test_database.py     # Database operation tests
-├── test_utils.py        # Utility and edge case tests
-├── test_sort_order.py   # Sort order functionality tests
-├── test_migration.py    # Database migration tests
-└── test_export_import.py # Export/import functionality tests
+├── test_app.py              # Main application tests
+├── test_database.py         # Database operation tests
+├── test_utils.py            # Utility and edge case tests
+├── test_sort_order.py       # Sort order functionality tests
+├── test_migration.py        # Database migration tests
+├── test_export_import.py    # Export/import functionality tests
+├── test_deployment.py       # Deployment database initialization tests
+└── test_deployment_scripts.py # Deployment script functionality tests
 ```
 
 ## 🚀 Quick Start
@@ -75,6 +77,19 @@ pytest
 - **Data Export**: JSON, CSV, and SQL export functionality
 - **Data Import**: Production database initialization
 - **Data Integrity**: Ensuring exported data matches source
+
+### 7. Deployment Tests (`test_deployment.py`)
+- **Database Initialization**: Production database setup with and without data files
+- **Data Preservation**: Ensuring existing data is preserved when no import file is provided
+- **Data Import**: Clearing and loading data when import files are provided
+- **Index Creation**: Database index creation and validation
+- **Error Handling**: Invalid file formats and nonexistent files
+
+### 8. Deployment Script Tests (`test_deployment_scripts.py`)
+- **Script Functionality**: Deployment script file operations
+- **Export File Handling**: Proper inclusion/exclusion of export files
+- **Configuration Files**: .gitignore and .gcloudignore validation
+- **Script Permissions**: Executable permissions verification
 
 ## 🛠️ Running Tests
 

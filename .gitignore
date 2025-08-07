@@ -51,7 +51,7 @@ Thumbs.db
 *.sqlite
 *.sqlite3
 
-# Export files (for deployment)
+# Export files (excluded from git, handled dynamically in deployment)
 database_export.json
 database_export.csv
 database_import.sql

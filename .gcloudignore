@@ -1,0 +1,94 @@
+# Exclude virtual environments
+venv/
+env/
+ENV/
+
+# Exclude IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Exclude OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Exclude test coverage
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Exclude logs
+*.log
+logs/
+
+# Exclude environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Exclude temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Exclude documentation builds
+docs/_build/
+
+# Exclude Jupyter Notebook
+.ipynb_checkpoints
+
+# Exclude pyenv
+.python-version
+
+# Exclude pipenv
+Pipfile.lock
+
+# Exclude PEP 582
+__pypackages__/
+
+# Exclude Celery
+celerybeat-schedule
+celerybeat.pid
+
+# Exclude SageMath parsed files
+*.sage.py
+
+# Exclude Spyder project settings
+.spyderproject
+.spyproject
+
+# Exclude Rope project settings
+.ropeproject
+
+# Exclude mkdocs documentation
+/site
+
+# Exclude mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Export files (excluded from gcloud, handled dynamically in deployment)
+database_export.json
+database_export.csv
+database_import.sql
+
+# Exclude local database files (but allow export files)
+*.db
+*.db.backup
+*.db.old
+*.sqlite
+*.sqlite3 

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Nord Stern Car Numbers - Google Cloud Run Deployment Script
-# This script deploys the application to Google Cloud Run
+# This script deploys the application code only - NEVER touches production database
 
 set -e
 
@@ -11,10 +11,12 @@ REGION="us-central1"
 SERVICE_NAME="nord-stern-car-numbers"
 IMAGE_NAME="us-docker.pkg.dev/$PROJECT_ID/nord-stern-car-numbers/nord-stern-car-numbers"
 
-echo "🚀 Deploying Nord Stern Car Numbers to Google Cloud Run..."
+echo "🚀 Deploying Nord Stern Car Numbers to Google Cloud Run (Code Only)"
+echo "=================================================================="
 echo "Project ID: $PROJECT_ID"
 echo "Region: $REGION"
 echo "Service Name: $SERVICE_NAME"
+echo "⚠️  This deployment will NOT affect the production database"
 
 # Check if gcloud is installed
 if ! command -v gcloud &> /dev/null; then
@@ -52,6 +54,8 @@ gcloud artifacts repositories create nord-stern-car-numbers \
 
 # Build and deploy using Cloud Build
 echo "🏗️ Building and deploying with Cloud Build..."
+echo "   This deployment preserves existing production data"
+
 gcloud builds submit --config cloudbuild.yaml .
 
 # Get the service URL
@@ -60,11 +64,18 @@ SERVICE_URL=$(gcloud run services describe $SERVICE_NAME --region=$REGION --form
 echo "✅ Deployment completed successfully!"
 echo "🌐 Your application is available at: $SERVICE_URL"
 echo ""
+echo "📊 Database Status:"
+echo "   - Production database preserved (no changes made)"
+echo "   - Application code updated"
+echo ""
 echo "📊 To view logs:"
 echo "   gcloud logging read \"resource.type=cloud_run_revision AND resource.labels.service_name=$SERVICE_NAME\" --limit=20 --format=\"value(timestamp,textPayload)\""
 echo ""
 echo "🔧 To update the service:"
 echo "   ./deploy.sh"
+echo ""
+echo "📊 To refresh production data from local database:"
+echo "   ./deploy_with_data.sh"
 echo ""
 echo "🗑️ To delete the service:"
 echo "   gcloud run services delete $SERVICE_NAME --region=$REGION" 
