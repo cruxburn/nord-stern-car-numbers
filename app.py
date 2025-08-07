@@ -263,7 +263,7 @@ def search():
         try:
             # Convert to integer for numeric matching
             search_int = int(number)
-            
+
             # Search by sort_order (numeric matching) and also try common formats
             cursor.execute(
                 """
@@ -271,7 +271,12 @@ def search():
                 WHERE sort_order = ? OR car_number = ? OR car_number = ? OR car_number = ?
                 ORDER BY sort_order, car_number
             """,
-                (search_int, str(search_int), str(search_int).zfill(2), str(search_int).zfill(3)),
+                (
+                    search_int,
+                    str(search_int),
+                    str(search_int).zfill(2),
+                    str(search_int).zfill(3),
+                ),
             )
         except ValueError:
             # If not a valid number, search by exact car_number match

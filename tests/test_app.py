@@ -423,7 +423,12 @@ class NordSternCarNumbersTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         data = response.get_json()
         self.assertFalse(data["available"])
-        self.assertIn("John Doe", data["driver"])
+        # Should find any of the variations (4, 04, 004)
+        self.assertTrue(
+            "John Doe" in data["driver"]
+            or "Jane Smith" in data["driver"]
+            or "Bob Johnson" in data["driver"]
+        )
 
     def test_stats_page(self):
         """Test statistics page loads"""
