@@ -54,7 +54,7 @@ README_TESTING.md
 # Database files (should not be in production image)
 *.db
 
-# Export files (will be copied separately for first deployment)
-database_export.json
-database_export.csv
-database_import.sql 
+# Export files (included for first deployment with data)
+# database_export.json
+# database_export.csv
+# database_import.sql 
