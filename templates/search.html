@@ -241,6 +241,9 @@
                                     <a href="{{ url_for('search') }}?status=Active" class="btn btn-outline-success">
                                         <i class="fas fa-check-circle me-2"></i> Active Only
                                     </a>
+                                    <a href="{{ url_for('search') }}?status=Expired" class="btn btn-outline-danger">
+                                        <i class="fas fa-clock me-2"></i> Expired Only
+                                    </a>
                                     <a href="{{ url_for('search') }}?status=Retired" class="btn btn-outline-warning">
                                         <i class="fas fa-times-circle me-2"></i> Retired Only
                                     </a>
@@ -388,11 +391,11 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Auto-switch to Results tab if there are search results or show_all is requested
-    {% if query or number or show_all %}
+    {% if query or number or show_all or status %}
         const searchResults = document.querySelector('#results-panel .table-responsive');
         const hasResults = searchResults && searchResults.querySelector('tbody tr');
         
-        if (hasResults || '{{ show_all }}') {
+        if (hasResults || '{{ show_all }}' || '{{ status }}') {
             // Switch to Results tab
             const resultsTab = document.querySelector('#results-tab');
             const resultsPanel = document.querySelector('#results-panel');
