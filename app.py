@@ -242,13 +242,165 @@ def search():
     query = request.args.get("q", "")
     number = request.args.get("number", "")
     show_all = request.args.get("show_all", "")
+    status = request.args.get("status", "")
 
     # Use configured database path or default
     db_path = app.config.get("DATABASE", "car_numbers.db")
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
-    if query and not show_all:
+    if status:
+        # Filter by status (Active, Retired, or Expired)
+        if status == "Expired":
+            # Show expired registrations (Active status but not active in period)
+            if query and not show_all:
+                # Search by name with expired filter
+                cursor.execute(
+                    """
+                    SELECT * FROM car_registrations 
+                    WHERE (first_name LIKE ? OR last_name LIKE ? OR (first_name || ' ' || last_name) LIKE ?)
+                    AND status = 'Active' AND is_active_in_period = 0
+                    ORDER BY sort_order, car_number
+                """,
+                    (f"%{query}%", f"%{query}%", f"%{query}%"),
+                )
+            elif number and not show_all:
+                # Search by car number with expired filter
+                try:
+                    # Convert to integer for numeric matching
+                    search_int = int(number)
+
+                    # Search by sort_order (numeric matching) and also try common formats with expired filter
+                    cursor.execute(
+                        """
+                        SELECT * FROM car_registrations 
+                        WHERE (sort_order = ? OR car_number = ? OR car_number = ? OR car_number = ?)
+                        AND status = 'Active' AND is_active_in_period = 0
+                        ORDER BY sort_order, car_number
+                    """,
+                        (
+                            search_int,
+                            str(search_int),
+                            str(search_int).zfill(2),
+                            str(search_int).zfill(3),
+                        ),
+                    )
+                except ValueError:
+                    # If not a valid number, search by exact car_number match with expired filter
+                    cursor.execute(
+                        """
+                        SELECT * FROM car_registrations 
+                        WHERE car_number = ? AND status = 'Active' AND is_active_in_period = 0
+                        ORDER BY sort_order, car_number
+                    """,
+                        (number,),
+                    )
+            else:
+                # Show all expired registrations
+                cursor.execute(
+                    "SELECT * FROM car_registrations WHERE status = 'Active' AND is_active_in_period = 0 ORDER BY sort_order, car_number"
+                )
+        elif status == "Active":
+            # Show only truly active registrations (Active status AND active in period)
+            if query and not show_all:
+                # Search by name with active filter
+                cursor.execute(
+                    """
+                    SELECT * FROM car_registrations 
+                    WHERE (first_name LIKE ? OR last_name LIKE ? OR (first_name || ' ' || last_name) LIKE ?)
+                    AND status = 'Active' AND is_active_in_period = 1
+                    ORDER BY sort_order, car_number
+                """,
+                    (f"%{query}%", f"%{query}%", f"%{query}%"),
+                )
+            elif number and not show_all:
+                # Search by car number with active filter
+                try:
+                    # Convert to integer for numeric matching
+                    search_int = int(number)
+
+                    # Search by sort_order (numeric matching) and also try common formats with active filter
+                    cursor.execute(
+                        """
+                        SELECT * FROM car_registrations 
+                        WHERE (sort_order = ? OR car_number = ? OR car_number = ? OR car_number = ?)
+                        AND status = 'Active' AND is_active_in_period = 1
+                        ORDER BY sort_order, car_number
+                    """,
+                        (
+                            search_int,
+                            str(search_int),
+                            str(search_int).zfill(2),
+                            str(search_int).zfill(3),
+                        ),
+                    )
+                except ValueError:
+                    # If not a valid number, search by exact car_number match with active filter
+                    cursor.execute(
+                        """
+                        SELECT * FROM car_registrations 
+                        WHERE car_number = ? AND status = 'Active' AND is_active_in_period = 1
+                        ORDER BY sort_order, car_number
+                    """,
+                        (number,),
+                    )
+            else:
+                # Show all truly active registrations
+                cursor.execute(
+                    "SELECT * FROM car_registrations WHERE status = 'Active' AND is_active_in_period = 1 ORDER BY sort_order, car_number"
+                )
+        else:
+            # Original logic for Retired and other statuses
+            if query and not show_all:
+                # Search by name with status filter
+                cursor.execute(
+                    """
+                    SELECT * FROM car_registrations 
+                    WHERE (first_name LIKE ? OR last_name LIKE ? OR (first_name || ' ' || last_name) LIKE ?)
+                    AND status = ?
+                    ORDER BY sort_order, car_number
+                """,
+                    (f"%{query}%", f"%{query}%", f"%{query}%", status),
+                )
+            elif number and not show_all:
+                # Search by car number with status filter
+                try:
+                    # Convert to integer for numeric matching
+                    search_int = int(number)
+
+                    # Search by sort_order (numeric matching) and also try common formats with status filter
+                    cursor.execute(
+                        """
+                        SELECT * FROM car_registrations 
+                        WHERE (sort_order = ? OR car_number = ? OR car_number = ? OR car_number = ?)
+                        AND status = ?
+                        ORDER BY sort_order, car_number
+                    """,
+                        (
+                            search_int,
+                            str(search_int),
+                            str(search_int).zfill(2),
+                            str(search_int).zfill(3),
+                            status,
+                        ),
+                    )
+                except ValueError:
+                    # If not a valid number, search by exact car_number match with status filter
+                    cursor.execute(
+                        """
+                        SELECT * FROM car_registrations 
+                        WHERE car_number = ? AND status = ?
+                        ORDER BY sort_order, car_number
+                    """,
+                        (number, status),
+                    )
+            else:
+                # Show all registrations with status filter
+                cursor.execute(
+                    "SELECT * FROM car_registrations WHERE status = ? ORDER BY sort_order, car_number",
+                    (status,),
+                )
+    elif query and not show_all:
         # Search by name
         cursor.execute(
             """
@@ -303,6 +455,7 @@ def search():
         query=query,
         number=number,
         show_all=show_all,
+        status=status,
     )
 
 

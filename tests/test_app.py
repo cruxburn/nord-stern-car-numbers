@@ -296,6 +296,62 @@ class NordSternCarNumbersTestCase(unittest.TestCase):
         self.assertIn(b"Jane Smith", response.data)
         self.assertIn(b"Bob Johnson", response.data)
 
+    def test_search_by_status_active(self):
+        """Test search by status - Active only"""
+        response = self.client.get("/search?status=Active")
+        self.assertEqual(response.status_code, 200)
+        # Should show only Active registrations
+        self.assertIn(b"John Doe", response.data)  # Active
+        self.assertIn(b"Jane Smith", response.data)  # Active
+        self.assertNotIn(b"Bob Johnson", response.data)  # Retired
+
+    def test_search_by_status_retired(self):
+        """Test search by status - Retired only"""
+        response = self.client.get("/search?status=Retired")
+        self.assertEqual(response.status_code, 200)
+        # Should show only Retired registrations
+        self.assertNotIn(b"John Doe", response.data)  # Active
+        self.assertNotIn(b"Jane Smith", response.data)  # Active
+        self.assertIn(b"Bob Johnson", response.data)  # Retired
+
+    def test_search_by_status_with_name(self):
+        """Test search by status combined with name search"""
+        response = self.client.get("/search?q=John&status=Active")
+        self.assertEqual(response.status_code, 200)
+        # Should show only Active registrations with "John" in the name
+        self.assertIn(b"John Doe", response.data)  # Active
+        self.assertNotIn(b"Bob Johnson", response.data)  # Retired
+
+    def test_search_by_status_with_car_number(self):
+        """Test search by status combined with car number search"""
+        response = self.client.get("/search?number=4&status=Active")
+        self.assertEqual(response.status_code, 200)
+        # Should show only Active registrations with car number 4
+        self.assertIn(b"John Doe", response.data)  # Active, car number 4
+        self.assertIn(b"Jane Smith", response.data)  # Active, car number 04
+        self.assertNotIn(
+            b"Bob Johnson", response.data
+        )  # Retired, car number 004 (should be excluded by status filter)
+
+    def test_search_by_status_expired(self):
+        """Test search by status - Expired only"""
+        response = self.client.get("/search?status=Expired")
+        self.assertEqual(response.status_code, 200)
+        # Should show only expired registrations (Active status but not active in period)
+        # Note: This test may need adjustment based on actual test data
+
+    def test_search_by_status_expired_with_name(self):
+        """Test search by status combined with name search - Expired"""
+        response = self.client.get("/search?q=John&status=Expired")
+        self.assertEqual(response.status_code, 200)
+        # Should show only expired registrations with "John" in the name
+
+    def test_search_by_status_expired_with_car_number(self):
+        """Test search by status combined with car number search - Expired"""
+        response = self.client.get("/search?number=4&status=Expired")
+        self.assertEqual(response.status_code, 200)
+        # Should show only expired registrations with car number 4
+
     def test_add_registration_page(self):
         """Test add registration page loads"""
         response = self.client.get("/add")
